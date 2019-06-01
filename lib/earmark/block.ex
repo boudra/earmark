@@ -2,7 +2,7 @@ defmodule Earmark.Block do
 
   # import Tools.Tracer
   use Earmark.Types
-  import Earmark.Helpers.LookaheadHelpers, only: [opens_inline_code: 1, still_inline_code: 2, read_list_lines: 3]
+  import Earmark.Helpers.LookaheadHelpers, only: [opens_inline_code: 1, still_inline_code: 2, read_list_lines: 1]
   import Earmark.Helpers.LineHelpers
   import Earmark.Helpers.AttrParser
   import Earmark.Helpers.ReparseHelpers
@@ -54,6 +54,7 @@ defmodule Earmark.Block do
   def parse(lines, options) do
     {blocks, options} = lines |> remove_trailing_blank_lines() |> lines_to_blocks(options)
     links  = links_from_blocks(blocks)
+    IO.inspect blocks
     {blocks, links, options}
   end
 
@@ -167,13 +168,17 @@ defmodule Earmark.Block do
   # We handle lists in two passes. In the first, we build list items,
   # in the second we combine adjacent items into lists. This is pass one
 
-  defp _parse( [first = %Line.ListItem{type: type, initial_indent: initial_indent, content: content, bullet: bullet, lnb: lnb} | rest ], result, options) do
-    {spaced, list_lines, rest, _offset, indent_level} = read_list_lines(rest, opens_inline_code(first), initial_indent)
+  defp _parse( [%Line.ListItem{type: type, content: content, bullet: bullet, lnb: lnb} | _ ]=lines, result, options) do
+    {spaced, list_lines, rest} = read_list_lines(lines)
 
-    spaced = (spaced || blank_line_in?(list_lines)) && peek(rest, Line.ListItem, type)
-    lines = for line <- list_lines, do: indent_list_item_body(line, indent_level || 0)
-    lines = [content | lines]
+    # A1: spaced is set in read_list_lines now
+    # spaced = (spaced || blank_line_in?(list_lines)) && peek(rest, Line.ListItem, type)
+    # A2: read_list_line indents the lines already
+    # lines = for line <- list_lines, do: indent_list_item_body(line, indent_level || 0)
+    lines = [content | list_lines]
     {blocks, _, options1} = Parser.parse(lines, %{options | line: lnb}, true)
+    |> Dev.Debugging.nth(0)
+    |> Dev.Debugging.inspect("--- Reparsing")
 
     _parse([%Line.Blank{lnb: 0} | rest], [ %ListItem{type: type, blocks: blocks, spaced: spaced, bullet: bullet, lnb: lnb} | result ], options1)
   end

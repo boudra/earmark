@@ -1,5 +1,8 @@
 defmodule Dev.Debugging do
 
+  def line(line, options \\ []) do
+    Earmark.Line.type_of({line, 0}, struct(Earmark.Options, options), false)
+  end
 
   def print_html(markdown) do
     markdown
@@ -9,19 +12,20 @@ defmodule Dev.Debugging do
 
   def parse(markdown) do
     Earmark.parse(markdown)
-    |> remove_context()
+    |> ret()
   end
 
   def nth(something, n) do
     {something, _nth(something, n)}
   end
 
-  defp _nth(something, n)
-  defp _nth(tuple, n) when is_tuple(tuple) do
-    _nth(Tuple.to_list(tuple), n)
-  end
-  defp _nth(list, n) when is_list(list) do
-    Enum.at(list, n)
+  def inspect(pair, title \\ nil)
+  def inspect({original, part}, title) do
+    if title do
+      IO.puts title
+    end
+    Kernel.inspect(part)
+    original
   end
 
   def inspect_only({original, collection}, elements) do
@@ -46,6 +50,12 @@ defmodule Dev.Debugging do
     end
   end
 
-  defp remove_context({nodes, _context}), do: nodes
+  defp _nth(something, n)
+  defp _nth(tuple, n) when is_tuple(tuple) do
+    _nth(Tuple.to_list(tuple), n)
+  end
+  defp _nth(list, n) when is_list(list) do
+    Enum.at(list, n)
+  end
 
 end

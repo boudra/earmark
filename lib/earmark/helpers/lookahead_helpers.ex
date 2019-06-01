@@ -4,6 +4,7 @@ defmodule Earmark.Helpers.LookaheadHelpers do
   alias Earmark.Line
   import Earmark.Helpers.LineHelpers
   import Earmark.Helpers.LeexHelpers
+  import Earmark.Helpers.ListHelpers
 
   @doc """
   Indicates if the _numbered_line_ passed in leaves an inline code block open.
@@ -74,6 +75,15 @@ defmodule Earmark.Helpers.LookaheadHelpers do
   #######################################################################################
   # read_list_lines
   #######################################################################################
+  @type read_list_info :: %{
+          bullet: String.t,
+          pending: maybe(String.t()),
+          pending_lnb: number,
+          initial_indent: number,
+          spaced: boolean,
+          type: :ul | :ol,
+          min_indent: maybe(number)
+        }
   @doc """
   Called to slurp in the lines for a list item.
   basically, we allow indents and blank lines, and
@@ -81,23 +91,29 @@ defmodule Earmark.Helpers.LookaheadHelpers do
   We also slurp in lines that are inside a multiline inline
   code block as indicated by `pending`.
   """
-  def read_list_lines(lines, {pending, pending_lnb}, initial_indent) do
+  def read_list_lines([first|lines]) do
+    {pending, pending_lnb} = opens_inline_code(first)
+    indent = calculate_list_indent(first)
+    {bullet, type, start} = determine_list_type(first)
     _read_list_lines(lines, [], %{
       pending: pending,
       pending_lnb: pending_lnb,
       min_indent: nil,
-      initial_indent: initial_indent
-    })
+      spaced: false,
+      initial_indent: indent
+    }) |> Dev.Debugging.nth(1)
+      |> Dev.Debugging.inspect("--- Read List Lines")
   end
 
-  @type read_list_info :: %{
-          pending: maybe(String.t()),
-          pending_lnb: number,
-          initial_indent: number,
-          min_indent: maybe(number)
-        }
+  defp _read_spaced_list_lines(lines, result, paras)
+  defp _read_spaced_list_lines(lines, result, _params) do
+    {true, Enum.reverse(result), lines}
+  end
 
   # List items with initial_indent + 2
+  defp _read_list_lines([line=%Line.Blank{} | rest], result, params) do
+    _read_spaced_list_lines(rest, [line|result], %{params | spaced: true})
+  end
   defp _read_list_lines(
          [line = %Line.ListItem{initial_indent: li_indent} | rest],
          result,
