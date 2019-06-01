@@ -175,7 +175,7 @@ defmodule Earmark.Block do
     # spaced = (spaced || blank_line_in?(list_lines)) && peek(rest, Line.ListItem, type)
     # A2: read_list_line indents the lines already
     # lines = for line <- list_lines, do: indent_list_item_body(line, indent_level || 0)
-    lines = [content | list_lines]
+    lines = [content | list_lines] |> IO.inspect
     {blocks, _, options1} = Parser.parse(lines, %{options | line: lnb}, true)
     |> Dev.Debugging.nth(0)
     |> Dev.Debugging.inspect("--- Reparsing")
