@@ -5,6 +5,7 @@ defmodule Support.AcceptanceTestCase do
       use ExUnit.Case
       alias Earmark.Options
       import Support.Helpers, only: [as_html: 1, as_html: 2]
+      import Support.Floki
     end
   end
   
