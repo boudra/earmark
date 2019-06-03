@@ -2,9 +2,10 @@ defmodule Earmark.Helpers.LookaheadHelpers do
   use Earmark.Types
 
   alias Earmark.Line
-  import Earmark.Helpers.LineHelpers
   import Earmark.Helpers.LeexHelpers
+  import Earmark.Helpers.LineHelpers
   import Earmark.Helpers.ListHelpers
+  import Earmark.Helpers.StringHelpers, only: [behead: 2, behead_indent: 2]
 
   @doc """
   Indicates if the _numbered_line_ passed in leaves an inline code block open.
@@ -14,6 +15,10 @@ defmodule Earmark.Helpers.LookaheadHelpers do
 
   Otherwise `{nil, 0}` is returned
   """
+  def opens_inline_code(line_or_string)
+  def opens_inline_code(string) when is_binary(string) do
+    opens_inline_code(%{line: string, lnb: 0})
+  end
   def opens_inline_code(%{line: line, lnb: lnb}) do
     case tokenize(line, with: :string_lexer) |> has_still_opening_backtix(nil) do
       nil -> {nil, 0}
@@ -29,6 +34,10 @@ defmodule Earmark.Helpers.LookaheadHelpers do
   opening backtix
   """
   # (#{},{_,_}) -> {_,_}
+  def still_inline_code(line_or_string, old)
+  def still_inline_code(string, old) when is_binary(string) do
+    still_inline_code(%{line: string, lnb: 0}, old)
+  end
   def still_inline_code(%{line: line, lnb: lnb}, old = {pending, _pending_lnb}) do
     case tokenize(line, with: :string_lexer) |> has_still_opening_backtix({:old, pending}) do
       nil -> {nil, 0}
@@ -76,7 +85,7 @@ defmodule Earmark.Helpers.LookaheadHelpers do
   # read_list_lines
   #######################################################################################
   @type read_list_info :: %{
-          bullet: String.t,
+          bullet_type: String.t,
           pending: maybe(String.t),
           pending_lnb: number,
           initial_indent: number,
@@ -89,128 +98,160 @@ defmodule Earmark.Helpers.LookaheadHelpers do
   We also slurp in lines that are inside a multiline inline
   code block as indicated by `pending`.
   """
-  def read_list_lines([first|lines]) do
+  def read_list_lines([%{list_indent: list_indent}=first|lines]) do
     {pending, pending_lnb} = opens_inline_code(first)
     indent = calculate_list_indent(first)
     {bullet, type, start} = determine_list_type(first)
-    _read_list_lines(lines, [first.line], %{
-      bullet: bullet,
+    # IO.puts ">>> read_list_lines"
+    # IO.inspect(lines)
+    _read_list_lines(lines, [behead(first.line, indent)], %{
+      bullet_type: String.slice(bullet, -1..-1),
       pending: pending,
       pending_lnb: pending_lnb,
       initial_indent: indent
       },
-      indent) |> Dev.Debugging.nth(1)
-      |> Dev.Debugging.inspect("--- Read List Lines")
+      list_indent)
+      # |> Dev.Debugging.nth(1)
+      # |> Dev.Debugging.inspect("--- Read List Lines")
   end
 
-  defp _read_list_lines(lines, result, params, indent)
-  defp _read_list_lines([%Line.Blank{} | rest], result, params) do
+  def _read_list_lines(lines, result, params, indent)
+  def _read_list_lines([%Line.Blank{} | rest], result, params, indent) do
     # Behavior which lines are contained in the list changes dramatically after
     # the first blank line.
-    _read_spaced_list_lines(rest, [""|result], params)
+    _read_spaced_list_lines(rest, [""|result], params, indent, false)
   end
   # Same list type, continue slurping...
-  defp _read_list_lines(
-         [ %Line.ListItem{bullet: new_bullet, line: line} | rest],
+  def _read_list_lines(
+         [ %Line.ListItem{bullet_type: new_bullet, line: line, list_indent: new_indent} | _]=lines,
          result,
-         params = %{bullet: old_bullet, pending: nil}
+         params = %{bullet_type: old_bullet, pending: nil},
+         indent
+       )
+       when new_bullet == old_bullet and new_indent < indent + 2 do
+           # IO.inspect {:l01, line, indent, new_indent}
+         {false, Enum.reverse(result), lines}
+       end
+  def _read_list_lines(
+         [ %Line.ListItem{bullet_type: new_bullet, line: line, list_indent: new_indent} | rest],
+         result,
+         params = %{bullet_type: old_bullet, initial_indent: initial_indent, pending: nil},
+         indent
        )
        when new_bullet == old_bullet do
-    with {pending1, pending_lnb1} = opens_inline_code(line),
-         do:
-           _read_list_lines(rest, [line | result], %{
-             params
-             | pending: pending1,
-               pending_lnb: pending_lnb1
-           })
-  end
-  # Not the same list type, we are done
-  defp _read_list_lines(
+         # IO.inspect [ :l02, line: line, indent: indent, new_indent: new_indent ]
+         _read_list_lines(rest, [behead_indent(line, initial_indent) | result], _opens_inline_code(line, params), indent)
+       end
+  def _read_list_lines(
+         [ %Line.ListItem{bullet_type: new_bullet, line: line, initial_indent: new_indent} | rest],
+         result,
+         params = %{bullet_type: old_bullet, initial_indent: initial_indent, pending: nil},
+         indent
+       )
+       when new_indent >= indent  do
+         _read_list_lines(rest, [behead_indent(line, initial_indent)| result], _opens_inline_code(line, params), indent)
+       end
+  def _read_list_lines(
          [ %Line.ListItem{} | _] = rest,
          result,
-         _params
+         _params,
+         _indent
        )
        do
+         # IO.inspect [:l03]
          {false, Enum.reverse(result), rest}
   end
+  def _read_list_lines(
+        [ %Line.Indent{line: line} | rest ],
+        result,
+        params = %{pending: nil, initial_indent: initial_indent},
+        indent
+       ) do
+         # IO.inspect [:l04, params, line: line]
+    _read_list_lines(rest, [behead_indent(line, indent) | result], _opens_inline_code(line, params), indent)
+  end
   # Rulers end lists too
-  defp _read_list_lines(
+  def _read_list_lines(
          [ %Line.Ruler{} | _] = rest,
          result,
-         _params
+         _params,
+         _indent
        ) do
+         # IO.inspect [:l05]
          {false, Enum.reverse(result), rest}
   end
   # Other text needs slurping...
-  defp _read_list_lines([%{line: line} | rest], result, params = %{pending: nil}) do
-    with {pending1, pending_lnb1} = opens_inline_code(line),
-         do:
-           _read_list_lines(rest, [line | result], %{
-             params
-             | pending: pending1,
-               pending_lnb: pending_lnb1
-           })
-    _read_list_lines(rest, [line], _opens_inline_code(line, params))
+  def _read_list_lines([%{line: line} | rest], result, params = %{pending: nil}, indent) do
+           # _read_list_lines(rest, [line | result], %{
+           #   params
+           #   | pending: pending1,
+           #     pending_lnb: pending_lnb1
+           # }, indent)
+    # IO.inspect [:l06, line: line]
+    _read_list_lines(rest, [line|result], _opens_inline_code(line, params), indent)
   end
   # Only now we match for list lines inside an open multiline inline code block
-  defp _read_list_lines(
-         [line | rest],
+  def _read_list_lines(
+         [%{line: line} | rest],
          result,
-         params = %{pending: pending, pending_lnb: pending_lnb}
+         params = %{pending: pending, pending_lnb: pending_lnb},
+         indent
        ) do
     with {pending1, pending_lnb1} = still_inline_code(line, {pending, pending_lnb}),
       do:
-        _read_list_lines(rest, [%{line | inside_code: true} | result], %{
+        _read_list_lines(rest, [line | result], %{
           params
           | pending: pending1,
             pending_lnb: pending_lnb1
-        })
+        }, indent)
   end
   # Running into EOI insise an open multiline inline code block
-  defp _read_list_lines([], result, _params) do
+  def _read_list_lines([], result, _params, _indent) do
     {false, Enum.reverse(result), []}
   end
 
-  defp _read_spaced_list_lines(lines, result, paras, indent)
+  defp _read_spaced_list_lines(lines, result, paras, indent, spaced)
   # Slurp in empty lines
-  defp _read_spaced_list_lines([%Line.Blank{}|rest], result, paras, indent) do
-    _read_spaced_list_lines(rest, [""|result], paras, indent)
+  defp _read_spaced_list_lines([%Line.Blank{}|rest], result, paras, indent, spaced) do
+    _read_spaced_list_lines(rest, [""|result], paras, indent, spaced)
   end
   # Bail out when needed indent is not given and not in a inline block
-  defp _read_spaced_list_lines([%{initial_indent: initial_indent}|_]=lines, result, %{pending: nil}, indent)
+  defp _read_spaced_list_lines([%{initial_indent: initial_indent}|_]=lines, result, %{pending: nil}, indent, spaced)
     when initial_indent < indent do
-      {true, Enum.reverse(result), lines}
+      {spaced, Enum.reverse(result), lines}
   end
   # List items with the same indent need to be of the same bullet
   defp _read_spaced_list_lines(
     [%Line.ListItem{initial_indent: initial_indent, bullet: new_bullet, content: line}|rest],
     result,
     %{bullet: old_bullet} = params,
-    indent
+    indent,
+    _spaced
     ) when (initial_indent == indent or initial_indent == indent + 1) and new_bullet == old_bullet  do
-      _read_spaced_list_lines(rest, [line|result], _opens_inline_code(line, params), indent)
+      _read_spaced_list_lines(rest, [line|result], _opens_inline_code(line, params), indent, true)
   end
   # List items with the same indent when not of the same bullet
   defp _read_spaced_list_lines(
     [%Line.ListItem{initial_indent: initial_indent, bullet: new_bullet, content: line}|_]=lines,
     result,
     %{bullet: old_bullet} = params,
-    indent
+    indent,
+    spaced
     ) when initial_indent == indent or initial_indent == indent + 1 do
-      {true, Enum.reverse(result), lines} 
+      {spaced, Enum.reverse(result), lines} 
   end
   # but continue if indent is good enough
-  defp _read_spaced_list_lines([%{initial_indent: initial_indent, content: line}|rest], result, %{pending: nil}=params, indent) do
-    _read_spaced_list_lines(rest, [line|result], _opens_inline_code(line, params), indent)
+  defp _read_spaced_list_lines([%{initial_indent: initial_indent, line: line}|rest], result, %{pending: nil}=params, indent, _spaced) do
+    _read_spaced_list_lines(rest, [behead_indent(line, indent)|result], _opens_inline_code(line, params), indent, true)
   end
   # Got to the end
-  defp _read_spaced_list_lines([], result, _params) do
-    {true, _remove_trailing_blank_lines(result, []), []}
+  defp _read_spaced_list_lines([], result, _params, _indent, spaced) do
+    {spaced, _remove_trailing_blank_lines(result, []), []}
   end
   # Slurp when we are inside a code block
-  defp _read_spaced_list_lines([%{content: line}|rest], result, %{pending: pending}=paras, indent) do
+  defp _read_spaced_list_lines([%{content: line}|rest], result, %{pending: pending}=paras, indent, _spaced) do
     {still_pending, _lnb} = still_inline_code(%{line: line, lnb: 0}, {pending, 0})
-    _read_spaced_list_lines(rest, [line|result], %{paras | pending: still_pending}, indent)
+    _read_spaced_list_lines(rest, [line|result], %{paras | pending: still_pending}, indent, true)
   end
 
   defp _remove_trailing_blank_lines(lines, result)
@@ -227,7 +268,7 @@ defmodule Earmark.Helpers.LookaheadHelpers do
   # Convenience wrapper around `opens_inline_code` into a map
   defp _opens_inline_code(line, params)
   defp _opens_inline_code(line, params) when is_binary(line) do
-    with {pending, pending_lnb} <- opens_inline_code({line, 0}),
+    with {pending, pending_lnb} <- opens_inline_code(%{line: line, lnb: 0}),
       do: %{params | pending: pending, pending_lnb: pending_lnb}
   end
   defp _opens_inline_code(line, params) do

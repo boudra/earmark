@@ -15,6 +15,8 @@ defmodule Dev.Debugging do
     |> remove_context()
   end
 
+  def duplicate(something), do: {something, something}
+
   def nth(something, n) do
     {something, _nth(something, n)}
   end

@@ -4,8 +4,7 @@ defmodule Support.AcceptanceTestCase do
     quote do
       use ExUnit.Case
       alias Earmark.Options
-      import Support.Helpers, only: [as_html: 1, as_html: 2]
-      import Support.Floki
+      import Support.Helpers, only: [as_html: 1, as_html: 2, html: 1, html!: 1]
     end
   end
   

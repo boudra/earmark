@@ -14,7 +14,7 @@ defmodule Acceptance.ListIndentTest do
     end
 
     test "mixed two levels (by 2)" do
-      markdown = "1. One\n  - two\n  - three"
+      markdown = "1. One\n   - two\n   - three"
       html     = "<ol>\n<li><p>One</p>\n<ul>\n<li>two\n</li>\n<li>three\n</li>\n</ul>\n</li>\n</ol>\n"
       messages = []
 

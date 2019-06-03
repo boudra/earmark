@@ -3,6 +3,7 @@ defmodule Earmark.Line do
   alias Earmark.Options
 
   import Options, only: [get_mapper: 1]
+  import Earmark.Helpers.ListHelpers, only: [calculate_list_indent: 1]
 
   @moduledoc """
   Give a line of text, return its context-free type. Not for external consumption
@@ -75,9 +76,11 @@ defmodule Earmark.Line do
         lnb: 0,
         type: :ul,
         line: "",
-        bullet: "* or -",
+        bullet: "*, -, +, 1) or 2.",
+        bullet_type: "last codepoint of bullet",
         content: "text",
         initial_indent: 0,
+        list_indent: 0,
         inside_code: false
       )
   )
@@ -235,7 +238,9 @@ defmodule Earmark.Line do
         %ListItem{
           type: :ul,
           bullet: bullet,
+          bullet_type: String.slice(bullet, -1..-1),
           content: text,
+          list_indent: calculate_list_indent(line),
         }
 
       match = Regex.run(~r/^(\s{0,3})(\d+\.)\s+(.*)/, line) ->
@@ -244,7 +249,9 @@ defmodule Earmark.Line do
         %ListItem{
           type: :ol,
           bullet: bullet,
+          bullet_type: String.slice(bullet, -1..-1),
           content: text,
+          list_indent: calculate_list_indent(line),
         }
 
       match = Regex.run(~r/^ \s{0,3} \| (?: [^|]+ \|)+ \s* $ /x, line) ->
