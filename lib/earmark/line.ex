@@ -44,33 +44,30 @@ defmodule Earmark.Line do
   '''x
   # '
 
-  defmodule(Blank, do: defstruct(lnb: 0, line: "", content: "", inside_code: false))
-  defmodule(Ruler, do: defstruct(lnb: 0, line: "", type: "- or * or _", inside_code: false))
+  defmodule(Blank, do: defstruct(lnb: 0, line: "", content: "", inside_code: false, initial_indent: 0))
+  defmodule(Ruler, do: defstruct(lnb: 0, line: "", type: "- or * or _", inside_code: false, initial_indent: 0))
 
   defmodule(Heading,
-    do: defstruct(lnb: 0, line: "", level: 1, content: "inline text", inside_code: false)
-  )
+    do: defstruct(lnb: 0, line: "", level: 1, content: "inline text", inside_code: false, initial_indent: 0))
 
-  defmodule(BlockQuote, do: defstruct(lnb: 0, line: "", content: "text", inside_code: false))
+  defmodule(BlockQuote, do: defstruct(lnb: 0, line: "", content: "text", inside_code: false, initial_indent: 0))
 
-  defmodule(Indent, do: defstruct(lnb: 0, line: "", level: 0, content: "text", inside_code: false))
+  defmodule(Indent, do: defstruct(lnb: 0, line: "", level: 0, content: "text", inside_code: false, initial_indent: 0))
 
   defmodule(Fence,
-    do: defstruct(lnb: 0, line: "", delimiter: "~ or `", language: nil, inside_code: false)
-  )
+    do: defstruct(lnb: 0, line: "", delimiter: "~ or `", language: nil, inside_code: false, initial_indent: 0))
 
-  defmodule(HtmlOpenTag, do: defstruct(lnb: 0, line: "", tag: "", content: "", inside_code: false))
+  defmodule(HtmlOpenTag, do: defstruct(lnb: 0, line: "", tag: "", content: "", inside_code: false, initial_indent: 0))
 
-  defmodule(HtmlCloseTag, do: defstruct(lnb: 0, line: "", tag: "<... to eol", inside_code: false))
-  defmodule(HtmlComment, do: defstruct(lnb: 0, line: "", complete: true, inside_code: false))
+  defmodule(HtmlCloseTag, do: defstruct(lnb: 0, line: "", tag: "<... to eol", inside_code: false, initial_indent: 0))
+  defmodule(HtmlComment, do: defstruct(lnb: 0, line: "", complete: true, inside_code: false, initial_indent: 0))
 
-  defmodule(HtmlOneLine, do: defstruct(lnb: 0, line: "", tag: "", content: "", inside_code: false))
+  defmodule(HtmlOneLine, do: defstruct(lnb: 0, line: "", tag: "", content: "", inside_code: false, initial_indent: 0))
 
   defmodule(IdDef,
-    do: defstruct(lnb: 0, line: "", id: nil, url: nil, title: nil, inside_code: false)
-  )
+    do: defstruct(lnb: 0, line: "", id: nil, url: nil, title: nil, inside_code: false, initial_indent: 0))
 
-  defmodule(FnDef, do: defstruct(lnb: 0, line: "", id: nil, content: "text", inside_code: false))
+  defmodule(FnDef, do: defstruct(lnb: 0, line: "", id: nil, content: "text", inside_code: false, initial_indent: 0))
 
   defmodule(ListItem,
     do:
@@ -86,17 +83,15 @@ defmodule Earmark.Line do
   )
 
   defmodule(SetextUnderlineHeading,
-    do: defstruct(lnb: 0, line: "", level: 1, inside_code: false, inside_code: false)
-  )
+    do: defstruct(lnb: 0, line: "", level: 1, inside_code: false, inside_code: false, initial_indent: 0))
 
   defmodule(TableLine,
-    do: defstruct(lnb: 0, line: "", content: "", columns: 0, inside_code: false)
-  )
+    do: defstruct(lnb: 0, line: "", content: "", columns: 0, inside_code: false, initial_indent: 0))
 
-  defmodule(Ial, do: defstruct(lnb: 0, line: "", attrs: "", inside_code: false, verbatim: ""))
-  defmodule(Text, do: defstruct(lnb: 0, line: "", content: "", inside_code: false))
+  defmodule(Ial, do: defstruct(lnb: 0, line: "", attrs: "", inside_code: false, verbatim: "", initial_indent: 0))
+  defmodule(Text, do: defstruct(lnb: 0, line: "", content: "", inside_code: false, initial_indent: 0))
 
-  defmodule(Plugin, do: defstruct(lnb: 0, line: "", content: "", prefix: "$$"))
+  defmodule(Plugin, do: defstruct(lnb: 0, line: "", content: "", prefix: "$$", initial_indent: 0))
 
   @type t ::
           %Blank{}
@@ -142,7 +137,7 @@ defmodule Earmark.Line do
 
   def type_of({line, lnb}, options = %Options{}, recursive) do
     line = line |> Helpers.expand_tabs() |> Helpers.remove_line_ending()
-    %{_type_of(line, options, recursive) | line: line, lnb: lnb}
+    %{_type_of(line, options, recursive) | initial_indent: _indent_of(line), line: line, lnb: lnb}
   end
 
   @doc false
@@ -153,6 +148,11 @@ defmodule Earmark.Line do
       [_, title] -> title
       _ -> nil
     end
+  end
+
+  @indent_rgx ~r{\A\s*}
+  defp _indent_of(line) do
+    Regex.run(@indent_rgx, line) |> hd() |> String.length
   end
 
   defp _type_of(line, options = %Options{}, recursive) do
@@ -236,7 +236,6 @@ defmodule Earmark.Line do
           type: :ul,
           bullet: bullet,
           content: text,
-          initial_indent: String.length(leading)
         }
 
       match = Regex.run(~r/^(\s{0,3})(\d+\.)\s+(.*)/, line) ->
@@ -246,7 +245,6 @@ defmodule Earmark.Line do
           type: :ol,
           bullet: bullet,
           content: text,
-          initial_indent: String.length(leading)
         }
 
       match = Regex.run(~r/^ \s{0,3} \| (?: [^|]+ \|)+ \s* $ /x, line) ->
