@@ -3,6 +3,7 @@ defmodule Support.Helpers do
   alias Earmark.Block.IdDef
   alias Earmark.Context
   alias Earmark.Inline
+  alias Earmark.Options
 
   ###############
   # Helpers.... #
@@ -13,11 +14,21 @@ defmodule Support.Helpers do
   end
 
   def as_html(markdown, options \\ []) do
-    Earmark.as_html(markdown, struct(Earmark.Options, options))
+    Earmark.as_html(markdown, struct(Options, options))
   end
 
   def as_html!(markdown, options \\ []) do
-    Earmark.as_html!(markdown, struct(Earmark.Options, options))
+    Earmark.as_html!(markdown, struct(Options, options))
+  end
+
+  def html(markdown, options \\ []) do
+    {status, html, messages} = Earmark.as_html(markdown, struct(Options, options))
+    {status, String.replace(html, "\n", ""), messages}
+  end
+
+  def html!(markdown, options \\ []) do
+    {:ok, html, []} = html(markdown, options)
+    html
   end
 
   def test_links do

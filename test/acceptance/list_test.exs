@@ -22,7 +22,7 @@ defmodule Acceptance.ListTest do
 
     test "Unnumbered Indent taken into account" do
       markdown = "   * one\n     one.one\n   * two"
-      html     = "<ul>\n<li>one\n one.one\n</li>\n<li>two\n</li>\n</ul>\n"
+      html     = "<ul>\n<li>one\none.one\n</li>\n<li>two\n</li>\n</ul>\n"
       messages = []
 
       assert as_html(markdown) == {:ok, html, messages}
@@ -38,7 +38,7 @@ defmodule Acceptance.ListTest do
 
     test "More numbers" do
       markdown = "1.  space one\n\n1. space two"
-      html     = "<ol>\n<li><p>space one</p>\n</li>\n<li><p>space two</p>\n</li>\n</ol>\n"
+      html     = "<ol>\n<li>space one\n</li>\n<li>space two\n</li>\n</ol>\n"
       messages = []
 
       assert as_html(markdown) == {:ok, html, messages}
@@ -110,7 +110,7 @@ defmodule Acceptance.ListTest do
 
     test "where does it end?" do
       markdown = "* a\n    b\nc"
-      html     = "<ul>\n<li>a\nb\nc\n</li>\n</ul>\n"
+      html     = "<ul>\n<li>a\n  b\nc\n</li>\n</ul>\n"
       messages = []
 
       assert as_html(markdown) == {:ok, html, messages}
@@ -118,7 +118,7 @@ defmodule Acceptance.ListTest do
 
     test "tables in lists? Maybe not" do
       markdown = "* x\n    a\n| A | B |"
-      html     = "<ul>\n<li>x\na\n| A | B |\n</li>\n</ul>\n"
+      html     = "<ul>\n<li>x\n  a\n| A | B |\n</li>\n</ul>\n"
       messages = []
 
       assert as_html(markdown) == {:ok, html, messages}

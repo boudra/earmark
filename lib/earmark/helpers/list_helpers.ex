@@ -7,6 +7,9 @@ defmodule Earmark.Helpers.ListHelpers do
   @doc false
   @spec calculate_list_indent( Line.t )::number
   def calculate_list_indent(line)
+  def calculate_list_indent(line) when is_binary(line) do
+    calculate_list_indent(%{line: line})
+  end
   def calculate_list_indent(%{line: content}=line) do
     cond do
       match = Regex.run(@ul_item_header_rgx, content) -> match |> hd() |> String.length

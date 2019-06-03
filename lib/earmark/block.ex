@@ -54,7 +54,7 @@ defmodule Earmark.Block do
   def parse(lines, options) do
     {blocks, options} = lines |> remove_trailing_blank_lines() |> lines_to_blocks(options)
     links  = links_from_blocks(blocks)
-    IO.inspect blocks
+    # IO.inspect blocks
     {blocks, links, options}
   end
 
@@ -170,15 +170,17 @@ defmodule Earmark.Block do
 
   defp _parse( [%Line.ListItem{type: type, content: content, bullet: bullet, lnb: lnb} | _ ]=lines, result, options) do
     {spaced, list_lines, rest} = read_list_lines(lines)
+    # IO.puts "<<< read_list_lines"
+    # IO.inspect list_lines
+    # IO.inspect spaced
 
     # A1: spaced is set in read_list_lines now
     # spaced = (spaced || blank_line_in?(list_lines)) && peek(rest, Line.ListItem, type)
     # A2: read_list_line indents the lines already
     # lines = for line <- list_lines, do: indent_list_item_body(line, indent_level || 0)
-    lines = [content | list_lines] |> IO.inspect
-    {blocks, _, options1} = Parser.parse(lines, %{options | line: lnb}, true)
-    |> Dev.Debugging.nth(0)
-    |> Dev.Debugging.inspect("--- Reparsing")
+    {blocks, _, options1} = Parser.parse(list_lines, %{options | line: lnb}, true)
+    # |> Dev.Debugging.nth(0)
+    # |> Dev.Debugging.inspect("--- Reparsing")
 
     _parse([%Line.Blank{lnb: 0} | rest], [ %ListItem{type: type, blocks: blocks, spaced: spaced, bullet: bullet, lnb: lnb} | result ], options1)
   end
