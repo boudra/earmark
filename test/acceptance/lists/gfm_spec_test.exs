@@ -19,26 +19,24 @@ defmodule Acceptance.Lists.GfmSpecTest do
       """ |> String.replace(~r{\s}, "")
       assert html!(markdown) == html 
     end
-  end
-  describe "Simple cases" do
 
-    test "parses" do
+    test "# 282" do
       markdown = """
-      # Hello World
+      1. foo
+      2. bar
+      3) baz
+      """
+      html = """
+      <ol>
+      <li>foo</li>
+      <li>bar</li>
+      </ol>
+      <ol start="3">
+      <li>baz</li>
+      </ol>
+      """ |> String.replace(~r{\n}, "")
+      assert html!(markdown) == html
       
-      * one
-      * two
-      """
-      html = "<h1>Hello World</h1><ul><li>one</li><li>two</li></ul>"
-      assert html!(markdown) == html 
-    end
-
-    test "simple case" do
-      markdown = """
-      * one
-      """
-      html = "<ul><li>one</li></ul>"
-      assert html!(markdown) == html 
     end
   end
   
