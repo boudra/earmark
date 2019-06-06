@@ -233,7 +233,7 @@ defmodule Earmark.Line do
         %FnDef{id: id, content: first_line}
 
       match = Regex.run(~r/^(\s{0,3})([-*+])\s+(.*)/, line) ->
-        [_, leading, bullet, text] = match
+        [_, _, bullet, text] = match
 
         %ListItem{
           type: :ul,
@@ -244,7 +244,7 @@ defmodule Earmark.Line do
         }
 
       match = Regex.run(~r/^(\s{0,3})(\d+[.)])\s+(.*)/, line) ->
-        [_, leading, bullet, text] = match
+        [_, _, bullet, text] = match
 
         %ListItem{
           type: :ol,

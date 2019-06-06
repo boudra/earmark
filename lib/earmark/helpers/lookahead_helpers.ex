@@ -3,7 +3,6 @@ defmodule Earmark.Helpers.LookaheadHelpers do
 
   alias Earmark.Line
   import Earmark.Helpers.LeexHelpers
-  import Earmark.Helpers.LineHelpers
   import Earmark.Helpers.ListHelpers
   import Earmark.Helpers.StringHelpers, only: [behead: 2, behead_indent: 2]
 
@@ -101,7 +100,7 @@ defmodule Earmark.Helpers.LookaheadHelpers do
   def read_list_lines([%{list_indent: list_indent}=first|lines]) do
     {pending, pending_lnb} = opens_inline_code(first)
     indent = calculate_list_indent(first)
-    {bullet, type, start} = determine_list_type(first)
+    {bullet, _type, _start} = determine_list_type(first)
     # IO.puts ">>> read_list_lines"
     # IO.inspect(lines)
     # IO.inspect(pending)
@@ -125,16 +124,16 @@ defmodule Earmark.Helpers.LookaheadHelpers do
   end
   # Same list type, continue slurping...
   def _read_list_lines(
-         [ %Line.ListItem{bullet_type: new_bullet, line: line, list_indent: new_indent} | _]=lines,
+         [ %Line.ListItem{bullet_type: new_bullet, list_indent: new_indent} | _]=lines,
          result,
-         params = %{bullet_type: old_bullet, pending: nil},
+         %{bullet_type: old_bullet, pending: nil},
          indent
        )
        when new_bullet == old_bullet and new_indent < indent + 2 do
          {false, Enum.reverse(result), lines}
        end
   def _read_list_lines(
-         [ %Line.ListItem{bullet_type: new_bullet, line: line, list_indent: new_indent} | rest],
+         [ %Line.ListItem{bullet_type: new_bullet, line: line} | rest],
          result,
          params = %{bullet_type: old_bullet, initial_indent: initial_indent, pending: nil},
          indent
@@ -144,9 +143,9 @@ defmodule Earmark.Helpers.LookaheadHelpers do
          _read_list_lines(rest, [behead_indent(line, initial_indent) | result], _opens_inline_code(line, params), indent)
        end
   def _read_list_lines(
-         [ %Line.ListItem{bullet_type: new_bullet, line: line, initial_indent: new_indent} | rest],
+         [ %Line.ListItem{line: line, initial_indent: new_indent} | rest],
          result,
-         params = %{bullet_type: old_bullet, initial_indent: initial_indent, pending: nil},
+         params = %{initial_indent: initial_indent, pending: nil},
          indent
        )
        when new_indent >= indent  do
@@ -165,7 +164,7 @@ defmodule Earmark.Helpers.LookaheadHelpers do
   def _read_list_lines(
         [ %Line.Indent{line: line} | rest ],
         result,
-        params = %{pending: nil, initial_indent: initial_indent},
+        params = %{pending: nil},
         indent
        ) do
          # IO.inspect [:l04, params, line: line]
@@ -246,16 +245,16 @@ defmodule Earmark.Helpers.LookaheadHelpers do
   end
   # List items with the same indent when not of the same bullet
   defp _read_spaced_list_lines(
-    [%Line.ListItem{initial_indent: initial_indent, bullet: new_bullet, content: line}|_]=lines,
+    [%Line.ListItem{initial_indent: initial_indent}|_]=lines,
     result,
-    %{bullet: old_bullet} = params,
+    _params,
     indent,
     spaced
     ) when initial_indent == indent or initial_indent == indent + 1 do
       {spaced, Enum.reverse(result), lines} 
   end
   # but continue if indent is good enough
-  defp _read_spaced_list_lines([%{initial_indent: initial_indent, line: line}|rest], result, %{pending: nil}=params, indent, _spaced) do
+  defp _read_spaced_list_lines([%{line: line}|rest], result, %{pending: nil}=params, indent, _spaced) do
     _read_spaced_list_lines(rest, [behead_indent(line, indent)|result], _opens_inline_code(line, params), indent, true)
   end
   # Got to the end
