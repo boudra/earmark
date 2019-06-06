@@ -1,8 +1,13 @@
 # 1.3.3
 
+## Issue #240 concerning lists
+
+GFM compliance was very week and code blocks inside list broken (see Earmark's very own doc on hexdoc.pm for that)
+A major redesign of slurping in lines for list items resulted from that and GFM compliance was augmented a lot.
 
 * Fix for issues
 
+  - [#240 code inside lists](https://github.com/pragdave/earmark/issues/240)
   - [#158 some pure links implemented](https://github.com/pragdave/earmark/issues/158)
 
 ## Minor improvements on documentation

@@ -15,10 +15,11 @@ defmodule Regressions.I093LastLiNotWrappedInPTest do
     {[%Earmark.Block.List{attrs: nil,
        blocks: [%Earmark.Block.ListItem{lnb: 1, attrs: nil,
          blocks: [%Earmark.Block.Para{lnb: 1, attrs: nil, lines: ["a"]}],
-         bullet: "*", spaced: true, type: :ul},
+         bullet: "*", bullet_type: "*", spaced: true, type: :ul},
        %Earmark.Block.ListItem{lnb: 3, attrs: nil,
         blocks: [%Earmark.Block.Para{lnb: 3, attrs: nil, lines: ["b"]}],
-        bullet: "*", spaced: true, type: :ul}], type: :ul}], %{}, %Earmark.Options{line: 3}}
+         bullet: "*", bullet_type: "*", spaced: true, type: :ul}], 
+      bullet_type: "*", type: :ul}], %{}, %Earmark.Options{line: 3}}
 
      assert @vanilla_list |> String.split(~r{\n}) |>Earmark.Parser.parse() == expected
   end

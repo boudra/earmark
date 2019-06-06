@@ -103,11 +103,13 @@ defmodule Parser.InlineCodeTest do
                    blocks: [%Block.Para{attrs: nil, lines: text_lines, lnb: 1}],
                    spaced: false,
                    bullet: bullet,
+                   bullet_type: String.slice(bullet, -1..-1),
                    type: type,
                    lnb: 1
                  }
                ],
                type: type,
+               bullet_type: String.slice(bullet, -1..-1),
                lnb: 1
              }
            ]
