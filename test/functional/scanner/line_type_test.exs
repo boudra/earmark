@@ -18,17 +18,17 @@ defmodule Functional.Scanner.LineTypeTest do
 
   [
     { "",         %Line.Blank{} },
-    { "        ", %Line.Blank{} },
+    { "        ", %Line.Blank{initial_indent: 8} },
 
     { "<!-- comment -->", %Line.HtmlComment{complete: true} },
     { "<!-- comment",     %Line.HtmlComment{complete: false} },
 
-    { "- -",   %Line.ListItem{type: :ul, bullet: "-", content: "-"} },
+    { "- -",   %Line.ListItem{type: :ul, bullet: "-", bullet_type: "-", content: "-", list_indent: 2} },
     { "- - -", %Line.Ruler{type: "-"} },
     { "--",    %Line.SetextUnderlineHeading{level: 2} },
     { "---",   %Line.Ruler{type: "-"} },
 
-    { "* *",   %Line.ListItem{type: :ul, bullet: "*", content: "*"} },
+    { "* *",   %Line.ListItem{type: :ul, bullet: "*", content: "*", bullet_type: "*", list_indent: 2} },
     { "* * *", %Line.Ruler{type: "*"} },
     { "**",    %Line.Text{content: "**"} },
     { "***",   %Line.Ruler{type: "*"} },
@@ -51,22 +51,20 @@ defmodule Functional.Scanner.LineTypeTest do
     { ">quote",     %Line.Text{content: ">quote"} },
 
     #1234567890
-    { "   a",        %Line.Text{content: "   a"} },
-    { "    b",       %Line.Indent{level: 1, content: "b"} },
-    { "      c",     %Line.Indent{level: 1, content: "  c"} },
-    { "        d",   %Line.Indent{level: 2, content: "d"} },
-    { "          e", %Line.Indent{level: 2, content: "  e"} },
+    { "   a",        %Line.Text{content: "   a", initial_indent: 3} },
+    { "    b",       %Line.Indent{level: 1, content: "b", initial_indent: 4} },
+    { "          e", %Line.Indent{level: 2, content: "  e", initial_indent: 10} },
 
     { "```",      %Line.Fence{delimiter: "```", language: "",     line: "```"} },
     { "``` java", %Line.Fence{delimiter: "```", language: "java", line: "``` java"} },
-    { " ``` java", %Line.Fence{delimiter: "```", language: "java", line: " ``` java"} },
+    { " ``` java", %Line.Fence{delimiter: "```", language: "java", line: " ``` java", initial_indent: 1} },
     { "```java",  %Line.Fence{delimiter: "```", language: "java", line: "```java"} },
     { "```language-java",  %Line.Fence{delimiter: "```", language: "language-java"} },
     { "```language-élixir",  %Line.Fence{delimiter: "```", language: "language-élixir"} },
 
     { "~~~",      %Line.Fence{delimiter: "~~~", language: "",     line: "~~~"} },
     { "~~~ java", %Line.Fence{delimiter: "~~~", language: "java", line: "~~~ java"} },
-    { "  ~~~java",  %Line.Fence{delimiter: "~~~", language: "java", line: "  ~~~java"} },
+    { "  ~~~java",  %Line.Fence{delimiter: "~~~", language: "java", line: "  ~~~java", initial_indent: 2} },
     { "~~~ language-java", %Line.Fence{delimiter: "~~~", language: "language-java"} },
     { "~~~ language-élixir",  %Line.Fence{delimiter: "~~~", language: "language-élixir"} },
 
@@ -108,25 +106,25 @@ defmodule Functional.Scanner.LineTypeTest do
     { id3, %Line.IdDef{id: "ID3", url: "http://example.com", title: "The title"} },
     { id4, %Line.IdDef{id: "ID4", url: "http://example.com", title: ""} },
     { id5, %Line.IdDef{id: "ID5", url: "http://example.com", title: "The title"} },
-    { id6, %Line.IdDef{id: "ID6", url: "http://example.com", title: "The title"} },
-    { id7, %Line.IdDef{id: "ID7", url: "http://example.com", title: "The title"} },
-    { id8, %Line.IdDef{id: "ID8", url: "http://example.com", title: "The title"} },
+    { id6, %Line.IdDef{id: "ID6", url: "http://example.com", title: "The title", initial_indent: 1} },
+    { id7, %Line.IdDef{id: "ID7", url: "http://example.com", title: "The title", initial_indent: 2} },
+    { id8, %Line.IdDef{id: "ID8", url: "http://example.com", title: "The title", initial_indent: 3} },
     { id9, %Line.Indent{content: "[ID9]: http://example.com  \"The title\"",
-        level: 1,       line: "    [ID9]: http://example.com  \"The title\""} },
+      level: 1,       line: "    [ID9]: http://example.com  \"The title\"", initial_indent: 4} },
 
       {id10, %Line.IdDef{id: "ID10", url: "/url/", title: "Title with \"quotes\" inside"}},
       {id11, %Line.IdDef{id: "ID11", url: "http://example.com", title: "Title with trailing whitespace"}},
 
+      { "* ul1", %Line.ListItem{ type: :ul, bullet: "*", content: "ul1", bullet_type: "*", list_indent: 2} },
+      { "+ ul2", %Line.ListItem{ type: :ul, bullet: "+", content: "ul2", bullet_type: "+", list_indent: 2} },
+      { "- ul3", %Line.ListItem{ type: :ul, bullet: "-", content: "ul3", bullet_type: "-", list_indent: 2} },
 
-      { "* ul1", %Line.ListItem{ type: :ul, bullet: "*", content: "ul1"} },
-      { "+ ul2", %Line.ListItem{ type: :ul, bullet: "+", content: "ul2"} },
-      { "- ul3", %Line.ListItem{ type: :ul, bullet: "-", content: "ul3"} },
-
-      { "*     ul1", %Line.ListItem{ type: :ul, bullet: "*", content: "ul1"} },
+      # 0123456789
+      { "*     ul1", %Line.ListItem{ type: :ul, bullet: "*", content: "ul1", bullet_type: "*", list_indent: 6} },
       { "*ul1",      %Line.Text{content: "*ul1"} },
 
-      { "1. ol1",          %Line.ListItem{ type: :ol, bullet: "1.", content: "ol1"} },
-      { "12345.      ol1", %Line.ListItem{ type: :ol, bullet: "12345.", content: "ol1"} },
+      { "1. ol1",          %Line.ListItem{ type: :ol, bullet: "1.", bullet_type: ".",  content: "ol1", list_indent: 3} },
+      { "12345)      ol1", %Line.ListItem{ type: :ol, bullet: "12345)", bullet_type: ")", content: "ol1", list_indent: 12} },
       { "1.ol1", %Line.Text{ content: "1.ol1"} },
 
       { "=",        %Line.SetextUnderlineHeading{level: 1} },
@@ -134,19 +132,20 @@ defmodule Functional.Scanner.LineTypeTest do
       { "-",        %Line.SetextUnderlineHeading{level: 2} },
       { "= and so", %Line.Text{content: "= and so"} },
 
-      { "   (title)", %Line.Text{content: "   (title)"} },
+      { "   (title)", %Line.Text{content: "   (title)", initial_indent: 3} },
+      { "12345( )", %Line.Text{content: "12345( )"} },
 
       { "{: .attr }",       %Line.Ial{attrs: ".attr", verbatim: " .attr "} },
       { "{:.a1 .a2}",       %Line.Ial{attrs: ".a1 .a2", verbatim: ".a1 .a2"} },
 
       { "  | a | b | c | ", %Line.TableLine{content: "  | a | b | c | ",
-          columns: ~w{a b c} } },
+        columns: ~w{a b c}, initial_indent: 2 } },
       { "  | a         | ", %Line.TableLine{content: "  | a         | ",
-          columns: ~w{a} } },
+        columns: ~w{a}, initial_indent: 2 } },
       { "  a | b | c  ",    %Line.TableLine{content: "  a | b | c  ",
-          columns: ~w{a b c} } },
+        columns: ~w{a b c}, initial_indent: 2 } },
       { "  a \\| b | c  ",  %Line.TableLine{content: "  a \\| b | c  ",
-          columns: [ "a | b",  "c"] } },
+        columns: [ "a | b",  "c"], initial_indent: 2 } },
 
       #
       # Footnote Definitions but no footnote option

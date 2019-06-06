@@ -104,6 +104,7 @@ defmodule Earmark.Helpers.LookaheadHelpers do
     {bullet, type, start} = determine_list_type(first)
     # IO.puts ">>> read_list_lines"
     # IO.inspect(lines)
+    # IO.inspect(pending)
     _read_list_lines(lines, [behead(first.line, indent)], %{
       bullet_type: String.slice(bullet, -1..-1),
       pending: pending,
@@ -111,6 +112,7 @@ defmodule Earmark.Helpers.LookaheadHelpers do
       initial_indent: indent
       },
       list_indent)
+      # |> IO.inspect
       # |> Dev.Debugging.nth(1)
       # |> Dev.Debugging.inspect("--- Read List Lines")
   end
@@ -129,7 +131,6 @@ defmodule Earmark.Helpers.LookaheadHelpers do
          indent
        )
        when new_bullet == old_bullet and new_indent < indent + 2 do
-           # IO.inspect {:l01, line, indent, new_indent}
          {false, Enum.reverse(result), lines}
        end
   def _read_list_lines(
@@ -154,7 +155,7 @@ defmodule Earmark.Helpers.LookaheadHelpers do
   def _read_list_lines(
          [ %Line.ListItem{} | _] = rest,
          result,
-         _params,
+         %{pending: nil},
          _indent
        )
        do
@@ -197,8 +198,8 @@ defmodule Earmark.Helpers.LookaheadHelpers do
          params = %{pending: pending, pending_lnb: pending_lnb},
          indent
        ) do
-    with {pending1, pending_lnb1} = still_inline_code(line, {pending, pending_lnb}),
-      do:
+    {pending1, pending_lnb1} = still_inline_code(line, {pending, pending_lnb})
+        # IO.inspect [:l12, pending: pending]
         _read_list_lines(rest, [line | result], %{
           params
           | pending: pending1,
@@ -215,9 +216,22 @@ defmodule Earmark.Helpers.LookaheadHelpers do
   defp _read_spaced_list_lines([%Line.Blank{}|rest], result, paras, indent, spaced) do
     _read_spaced_list_lines(rest, [""|result], paras, indent, spaced)
   end
+  # Bail out when needed indent is not given and not in a inline block, but set spaced in case the list continues
+  #
+  defp _read_spaced_list_lines(
+    [%Line.ListItem{bullet_type: new_bullet_type, initial_indent: initial_indent}|_]=lines,
+    result,
+    %{pending: nil, bullet_type: old_bullet_type},
+    indent,
+    _)
+    when initial_indent < indent and new_bullet_type == old_bullet_type do
+      # IO.inspect [:s02, initial_indent: initial_indent, indent: indent]
+      {true, Enum.reverse(result), lines}
+  end
   # Bail out when needed indent is not given and not in a inline block
   defp _read_spaced_list_lines([%{initial_indent: initial_indent}|_]=lines, result, %{pending: nil}, indent, spaced)
     when initial_indent < indent do
+      # IO.inspect [:s01]
       {spaced, Enum.reverse(result), lines}
   end
   # List items with the same indent need to be of the same bullet

@@ -123,11 +123,6 @@ defmodule Parser.InlineCodeTest do
     assert_list_with(result, lines)
   end
 
-  test "Mutliline inline code in list is parsed correctly using triple beaktix (getting rid of code and list items)" do
-    lines = ["\\`prefix```first", "     second \\`", "+ third``` `fourth``", "     fifth`"]
-    {result, _, _} = parse_as_list(lines)
-    assert_list_with(result, lines)
-  end
 
   test "Mutliline inline code in list is correctly interpreting included longer and shorter sequences of backtix" do
     lines = ["`single `` ```", "` ``double ` ```", "     `` ```triple \\``` ` `` ````", "```"]

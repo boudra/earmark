@@ -1,4 +1,4 @@
-defmodule Acceptance.ListTest do
+defmodule Acceptance.Lists.ListTest do
   use ExUnit.Case
 
   import Support.Helpers, only: [as_html: 1]
@@ -38,7 +38,7 @@ defmodule Acceptance.ListTest do
 
     test "More numbers" do
       markdown = "1.  space one\n\n1. space two"
-      html     = "<ol>\n<li>space one\n</li>\n<li>space two\n</li>\n</ol>\n"
+      html     = "<ol>\n<li><p>space one</p>\n</li>\n<li><p>space two</p>\n</li>\n</ol>\n"
       messages = []
 
       assert as_html(markdown) == {:ok, html, messages}

@@ -243,7 +243,7 @@ defmodule Earmark.Line do
           list_indent: calculate_list_indent(line),
         }
 
-      match = Regex.run(~r/^(\s{0,3})(\d+\.)\s+(.*)/, line) ->
+      match = Regex.run(~r/^(\s{0,3})(\d+[.)])\s+(.*)/, line) ->
         [_, leading, bullet, text] = match
 
         %ListItem{
