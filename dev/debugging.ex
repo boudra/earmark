@@ -12,7 +12,8 @@ defmodule Dev.Debugging do
 
   def parse(markdown) do
     Earmark.Parser.parse_markdown(markdown)
-    |> remove_context()
+    |> IO.inspect
+    # |> remove_context()
   end
 
   def duplicate(something), do: {something, something}
@@ -46,7 +47,7 @@ defmodule Dev.Debugging do
 
   def ret({original, _}), do: original
 
-  defp only(elements) do
+  def only(elements) do
     fn a_map ->
       Map.take(a_map, [:__struct__ | elements])
     end

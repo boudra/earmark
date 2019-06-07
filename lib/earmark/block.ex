@@ -1,13 +1,5 @@
 defmodule Earmark.Block do
 
-  # import Tools.Tracer
-  use Earmark.Types
-  import Earmark.Helpers.InlineCodeHelpers, only: [opens_inline_code: 1, still_inline_code: 2]
-  import Earmark.Helpers.LookaheadHelpers, only: [read_list_lines: 1]
-  import Earmark.Helpers.LineHelpers
-  import Earmark.Helpers.AttrParser
-  import Earmark.Helpers.ReparseHelpers
-  import Earmark.Message, only: [add_message: 2, add_messages: 2]
 
   @moduledoc """
   Given a list of parsed lines, convert them into blocks.

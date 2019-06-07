@@ -11,7 +11,7 @@ defmodule Earmark.Helpers.StringHelpers do
 
   """
   @spec behead( binary(), binary() | number() ) :: binary()
-  def behad(str, ignore)
+  def behead(str, ignore)
   def behead(str, ignore) when is_integer(ignore) do
     String.slice(str, ignore..-1)
   end

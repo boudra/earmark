@@ -2,6 +2,7 @@ defmodule Earmark.Helpers.LookaheadHelpers do
   use Earmark.Types
 
   alias Earmark.Line
+  alias Dev.Debugging, as: D
   import Earmark.Helpers.InlineCodeHelpers
   import Earmark.Helpers.ListHelpers
   import Earmark.Helpers.StringHelpers, only: [behead: 2, behead_indent: 2]
@@ -29,8 +30,10 @@ defmodule Earmark.Helpers.LookaheadHelpers do
     indent = calculate_list_indent(first)
     {bullet, _type, _start} = determine_list_type(first)
     # IO.puts ">>> read_list_lines"
-    # IO.inspect(lines)
-    # IO.inspect(pending)
+    lines
+    # |> D.duplicate
+    # |> D.inspect_only([:line])
+    {_,y,z} =
     _read_list_lines(lines, [behead(first.line, indent)], %{
       bullet_type: String.slice(bullet, -1..-1),
       pending: pending,
@@ -38,9 +41,9 @@ defmodule Earmark.Helpers.LookaheadHelpers do
       initial_indent: indent
       },
       list_indent)
-      # |> IO.inspect
-      # |> Dev.Debugging.nth(1)
-      # |> Dev.Debugging.inspect("--- Read List Lines")
+    # IO.puts "<<< read_list_line"
+    # IO.inspect(y)
+    {y, z}
   end
 
   def _read_list_lines(lines, result, params, indent)
@@ -140,6 +143,7 @@ defmodule Earmark.Helpers.LookaheadHelpers do
   defp _read_spaced_list_lines(lines, result, paras, indent, spaced)
   # Slurp in empty lines
   defp _read_spaced_list_lines([%Line.Blank{}|rest], result, paras, indent, spaced) do
+    # IO.inspect [:s04, result: result]
     _read_spaced_list_lines(rest, [""|result], paras, indent, spaced)
   end
   # Bail out when needed indent is not given and not in a inline block, but set spaced in case the list continues
@@ -155,9 +159,9 @@ defmodule Earmark.Helpers.LookaheadHelpers do
       {true, Enum.reverse(result), lines}
   end
   # Bail out when needed indent is not given and not in a inline block
-  defp _read_spaced_list_lines([%{initial_indent: initial_indent}|_]=lines, result, %{pending: nil}, indent, spaced)
+  defp _read_spaced_list_lines([%{initial_indent: initial_indent, line: line}|_]=lines, result, %{pending: nil}, indent, spaced)
     when initial_indent < indent do
-      # IO.inspect [:s01]
+      # IO.inspect [:s01, line: line]
       {spaced, Enum.reverse(result), lines}
   end
   # List items with the same indent need to be of the same bullet
@@ -182,11 +186,13 @@ defmodule Earmark.Helpers.LookaheadHelpers do
   end
   # but continue if indent is good enough
   defp _read_spaced_list_lines([%{line: line}|rest], result, %{pending: nil}=params, indent, _spaced) do
+    # IO.inspect [:s05, line: line]
     _read_spaced_list_lines(rest, [behead_indent(line, indent)|result], _opens_inline_code(line, params), indent, true)
   end
   # Got to the end
   defp _read_spaced_list_lines([], result, _params, _indent, spaced) do
-    {spaced, _remove_trailing_blank_lines(result, []), []}
+    # IO.inspect [:s99, result: result]
+    {spaced, _remove_trailing_blank_lines(result), []}
   end
   # Slurp when we are inside a code block
   defp _read_spaced_list_lines([%{content: line}|rest], result, %{pending: pending}=paras, indent, _spaced) do
@@ -194,15 +200,15 @@ defmodule Earmark.Helpers.LookaheadHelpers do
     _read_spaced_list_lines(rest, [line|result], %{paras | pending: still_pending}, indent, true)
   end
 
-  defp _remove_trailing_blank_lines(lines, result)
-  defp _remove_trailing_blank_lines([], result) do
-    result
+  defp _remove_trailing_blank_lines(lines)
+  defp _remove_trailing_blank_lines([]) do
+    []
   end
-  defp _remove_trailing_blank_lines([""|rest], result) do
-    _remove_trailing_blank_lines(rest, result)
+  defp _remove_trailing_blank_lines([""|rest]) do
+    _remove_trailing_blank_lines(rest)
   end
-  defp _remove_trailing_blank_lines([line|rest], result) do
-    _remove_trailing_blank_lines(rest, [line | result])
+  defp _remove_trailing_blank_lines(lines) do
+    Enum.reverse(lines)
   end
 
   # Convenience wrapper around `opens_inline_code` into a map

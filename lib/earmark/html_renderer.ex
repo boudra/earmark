@@ -34,6 +34,13 @@ defmodule Earmark.HtmlRenderer do
     add_attrs!(lines, "<p>#{lines.value}</p>\n", attrs, [], lnb)
   end
 
+  #########
+  # Blank #
+  #########
+  defp render_block(:blank, context) do
+    {context, ""}
+  end
+
   ########
   # Html #
   ########

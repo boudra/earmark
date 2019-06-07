@@ -3,7 +3,8 @@ defmodule Earmark.Parser do
   alias Earmark.Line
   alias Earmark.Options
 
-  import Earmark.Helpers.LookaheadHelpers, only: [opens_inline_code: 1, still_inline_code: 2, read_list_lines: 3]
+  import Earmark.Helpers.InlineCodeHelpers, only: [opens_inline_code: 1, still_inline_code: 2]
+  import Earmark.Helpers.LookaheadHelpers, only: [read_list_lines: 1]
   import Earmark.Helpers.LineHelpers
   import Earmark.Helpers.AttrParser
   import Earmark.Helpers.ReparseHelpers
@@ -166,15 +167,12 @@ defmodule Earmark.Parser do
   # We handle lists in two passes. In the first, we build list items,
   # in the second we combine adjacent items into lists. This is pass one
 
-  defp _parse( [first = %Line.ListItem{type: type, initial_indent: initial_indent, content: content, bullet: bullet, lnb: lnb} | rest ], result, options) do
-    {spaced, list_lines, rest, _offset, indent_level} = read_list_lines(rest, opens_inline_code(first), initial_indent)
+  defp _parse( [first = %Line.ListItem{type: type, initial_indent: initial_indent, content: content, bullet: bullet, lnb: lnb} | _ ] = lines, result, options) do
+    {list_lines, rest} = read_list_lines(lines)
 
-    spaced = (spaced || blank_line_in?(list_lines)) && peek(rest, Line.ListItem, type)
-    lines = for line <- list_lines, do: indent_list_item_body(line, indent_level || 0)
-    lines = [content | lines]
-    {blocks, _, options1} = parse(lines, %{options | line: lnb}, true)
+    {blocks, _, options1} = parse(list_lines, %{options | line: lnb}, true)
 
-    _parse([%Line.Blank{lnb: 0} | rest], [ %Block.ListItem{type: type, blocks: blocks, spaced: spaced, bullet: bullet, lnb: lnb} | result ], options1)
+    _parse([%Line.Blank{lnb: 0} | rest], [ %Block.ListItem{type: type, blocks: blocks, bullet: bullet, lnb: lnb} | result ], options1)
   end
 
   #################
