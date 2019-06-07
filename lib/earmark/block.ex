@@ -2,7 +2,8 @@ defmodule Earmark.Block do
 
   # import Tools.Tracer
   use Earmark.Types
-  import Earmark.Helpers.LookaheadHelpers, only: [opens_inline_code: 1, still_inline_code: 2, read_list_lines: 1]
+  import Earmark.Helpers.InlineCodeHelpers, only: [opens_inline_code: 1, still_inline_code: 2]
+  import Earmark.Helpers.LookaheadHelpers, only: [read_list_lines: 1]
   import Earmark.Helpers.LineHelpers
   import Earmark.Helpers.AttrParser
   import Earmark.Helpers.ReparseHelpers
