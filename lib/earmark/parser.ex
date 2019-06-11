@@ -6,6 +6,7 @@ defmodule Earmark.Parser do
   import Earmark.Helpers.InlineCodeHelpers, only: [opens_inline_code: 1, still_inline_code: 2]
   import Earmark.Helpers.LookaheadHelpers, only: [read_list_lines: 1]
   import Earmark.Helpers.LineHelpers
+  import Earmark.Helpers.ListHelpers, only: [tighten_lists: 1]
   import Earmark.Helpers.AttrParser
   import Earmark.Helpers.ReparseHelpers
   import Earmark.Message, only: [add_message: 2, add_messages: 2]
@@ -61,7 +62,7 @@ defmodule Earmark.Parser do
 
   defp lines_to_blocks(lines, options) do
     with {blocks, options1} <- lines |> _parse([], options) do
-      { blocks |> assign_attributes_to_blocks([]) |> consolidate_list_items([]), options1 }
+      { blocks |> assign_attributes_to_blocks([]) |> IO.inspect |> consolidate_list_items([]) |> tighten_lists(), options1 }
     end
   end
 
@@ -296,8 +297,8 @@ defmodule Earmark.Parser do
   ###############
   # We've reached the point where empty lines are no longer significant
 
-  defp _parse( [ %Line.Blank{} | rest ], result, options) do
-    _parse(rest, result, options)
+  defp _parse( [ %Line.Blank{lnb: lnb} | rest ], result, options) do
+    _parse(rest, [%Block.Blank{lnb: lnb} | result], options)
   end
 
   ##########
@@ -361,21 +362,27 @@ defmodule Earmark.Parser do
   ##################################################
 
   defp consolidate_list_items([], result) do
-    result |> Enum.map(&compute_list_spacing/1)  # no need to reverse
+    result #|> Enum.map(&compute_list_spacing/1)  # no need to reverse
   end
   # We have a list, and the next element is an item of the same type
   defp consolidate_list_items(
-    [list = %Block.List{type: type, blocks: items},
-     item = %Block.ListItem{type: type} | rest], result)
+    [list = %Block.List{bullet_type: type, blocks: items},
+     item = %Block.ListItem{bullet_type: type} | rest], result)
   do
     start = extract_start(item)
     items = [ item | items ]   # original list is reversed
     consolidate_list_items([ %{ list | blocks: items, start: start } | rest ], result)
   end
+  defp consolidate_list_items(
+    [list = %Block.List{type: type, blocks: items}, %Block.Blank{} | rest], result)
+  do
+    consolidate_list_items([list|rest], result)
+  end
+
   # We have an item, but no open list
-  defp consolidate_list_items([ item = %Block.ListItem{type: type} | rest], result) do
+  defp consolidate_list_items([ item = %Block.ListItem{bullet_type: type} | rest], result) do
     start = extract_start(item)
-    consolidate_list_items([ %Block.List{ type: type, blocks: [ item ], start: start} | rest ], result)
+    consolidate_list_items([ %Block.List{ bullet_type: type, blocks: [ item ], start: start} | rest ], result)
   end
   # Nothing to see here, move on
   defp consolidate_list_items([ head | rest ], result) do

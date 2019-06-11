@@ -31,45 +31,46 @@ defmodule Earmark.Helpers.ListHelpers do
   end
 
   @doc false
-  def space_lists(blocks)
-  def space_lists(blocks) do
-    IO.inspect blocks
-    Enum.map(blocks, &space_list/1)
+  def tighten_lists(blocks)
+  def tighten_lists(blocks) do
+    # IO.inspect blocks
+    Enum.map(blocks, &tighten_list/1)
   end
 
-  defp space_list(block)
-  defp space_list(%Block.List{blocks: blocks} = list) do
-    %{list | blocks: space_lists(blocks)}
+  defp tighten_list(block)
+  defp tighten_list(%Block.List{blocks: blocks} = list) do
+    tight = Enum.any?(blocks, &_list_item_tight?(&1.blocks, :init))
+    blocks1 = Enum.map(blocks, &%{&1  | spaced: tight})
+    %{list | blocks: tighten_lists(blocks1)}
   end
-  defp space_list(%{spaced: _}=block) do
+  defp tighten_list(%{blocks: blocks} = list) do
+    %{list | blocks: tighten_lists(blocks)}
+  end
+  defp tighten_list(%{spaced: _}=block) do
     %{block | spaced: false}
   end
-  defp space_list(block) do
+  defp tighten_list(block) do
     block
   end
 
-  defp list_spaced?(blocks) do
-    _list_spaced?(blocks, :init)
+  defp _list_item_tight?(blocks, state)
+  defp _list_item_tight?([], _), do: false
+  defp _list_item_tight?([:blank|rest], :init) do
+    _list_item_tight?(rest, :init)
   end
-
-  defp _list_spaced?(blocks, state)
-  defp _list_spaced?([], _), do: false
-  defp _list_spaced?([:blank|rest], :init) do
-    _list_spaced?(rest, :init)
+  defp _list_item_tight?([_|rest], :init) do
+    _list_item_tight?(rest, :candidate)
   end
-  defp _list_spaced?([_|rest], :init) do
-    _list_spaced?(rest, :candidate)
+  defp _list_item_tight?([:blank|rest], :candidate) do
+    _list_item_tight?(rest, :spaced)
   end
-  defp _list_spaced?([:blank|rest], :candidate) do
-    _list_spaced?(rest, :spaced)
+  defp _list_item_tight?([_|rest], :candidate) do
+    _list_item_tight?(rest, :candidate)
   end
-  defp _list_spaced?([_|rest], :candidate) do
-    _list_spaced?(rest, :candidate)
+  defp _list_item_tight?([:blank|rest], :spaced) do
+    _list_item_tight?(rest, :spaced)
   end
-  defp _list_spaced?([:blank|rest], :spaced) do
-    _list_spaced?(rest, :spaced)
-  end
-  defp _list_spaced?([_|_rest], :spaced) do
+  defp _list_item_tight?([_|_rest], :spaced) do
     true
   end
 
