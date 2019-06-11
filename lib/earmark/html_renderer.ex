@@ -26,19 +26,19 @@ defmodule Earmark.HtmlRenderer do
     {put_in(context.options.messages, all_messages), html |> IO.iodata_to_binary()}
   end
 
+  ##########
+  #  Blank #
+  ##########
+  defp render_block(%Block.Blank{}, context) do
+    {context, ""}
+  end
+
   #############
   # Paragraph #
   #############
   defp render_block(%Block.Para{lnb: lnb, lines: lines, attrs: attrs}, context) do
     lines = convert(lines, lnb, context)
     add_attrs!(lines, "<p>#{lines.value}</p>\n", attrs, [], lnb)
-  end
-
-  #########
-  # Blank #
-  #########
-  defp render_block(:blank, context) do
-    {context, ""}
   end
 
   ########
