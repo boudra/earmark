@@ -167,7 +167,7 @@ defmodule Earmark.Parser do
   # We handle lists in two passes. In the first, we build list items,
   # in the second we combine adjacent items into lists. This is pass one
 
-  defp _parse( [first = %Line.ListItem{type: type, initial_indent: initial_indent, content: content, bullet: bullet, lnb: lnb} | _ ] = lines, result, options) do
+  defp _parse( [%Line.ListItem{type: type, bullet: bullet, lnb: lnb} | _ ] = lines, result, options) do
     {list_lines, rest} = read_list_lines(lines)
 
     {blocks, _, options1} = parse(list_lines, %{options | line: lnb}, true)
@@ -545,10 +545,10 @@ defmodule Earmark.Parser do
   end
 
 
-  defp peek([], _, _), do: false
-  defp peek([head | _], struct, type) do
-    head.__struct__ == struct && head.type == type
-  end
+  # defp peek([], _, _), do: false
+  # defp peek([head | _], struct, type) do
+  #   head.__struct__ == struct && head.type == type
+  # end
 
   defp extract_start(%{bullet: "1."}), do: ""
   defp extract_start(%{bullet: bullet}) do

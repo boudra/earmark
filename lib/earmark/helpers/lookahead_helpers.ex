@@ -2,7 +2,7 @@ defmodule Earmark.Helpers.LookaheadHelpers do
   use Earmark.Types
 
   alias Earmark.Line
-  alias Dev.Debugging, as: D
+  # alias Dev.Debugging, as: D
   import Earmark.Helpers.InlineCodeHelpers
   import Earmark.Helpers.ListHelpers
   import Earmark.Helpers.StringHelpers, only: [behead: 2, behead_indent: 2]
@@ -30,7 +30,7 @@ defmodule Earmark.Helpers.LookaheadHelpers do
     indent = calculate_list_indent(first)
     {bullet, _type, _start} = determine_list_type(first)
     # IO.puts ">>> read_list_lines"
-    lines
+    # lines
     # |> D.duplicate
     # |> D.inspect_only([:line])
     {_,y,z} =
@@ -159,7 +159,7 @@ defmodule Earmark.Helpers.LookaheadHelpers do
       {true, Enum.reverse(result), lines}
   end
   # Bail out when needed indent is not given and not in a inline block
-  defp _read_spaced_list_lines([%{initial_indent: initial_indent, line: line}|_]=lines, result, %{pending: nil}, indent, spaced)
+  defp _read_spaced_list_lines([%{initial_indent: initial_indent}|_]=lines, result, %{pending: nil}, indent, spaced)
     when initial_indent < indent do
       # IO.inspect [:s01, line: line]
       {spaced, Enum.reverse(result), lines}

@@ -7,10 +7,6 @@ defmodule Earmark.Block do
   document (in internal form).
   """
 
-  alias Earmark.Line
-  alias Earmark.Parser
-  alias Earmark.Options
-
   defmodule Heading,     do: defstruct lnb: 0, attrs: nil, content: nil, level: nil
   defmodule Ruler,       do: defstruct lnb: 0, attrs: nil, type: nil
   defmodule BlockQuote,  do: defstruct lnb: 0, attrs: nil, blocks: []

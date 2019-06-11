@@ -69,7 +69,7 @@ defmodule Earmark.Helpers.ListHelpers do
   defp _list_spaced?([:blank|rest], :spaced) do
     _list_spaced?(rest, :spaced)
   end
-  defp _list_spaced?([_|rest], :spaced) do
+  defp _list_spaced?([_|_rest], :spaced) do
     true
   end
 
