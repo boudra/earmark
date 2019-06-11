@@ -1,10 +1,5 @@
 defmodule TableTest do
-  use ExUnit.Case
-
-  alias Earmark.Line
-  alias Earmark.Options
-  alias Earmark.Block
-  alias Earmark.Parser
+  use Support.ParserTestCase
 
   test "test one table line is just a paragraph" do
     result = lines_to_blocks([
@@ -130,10 +125,6 @@ defmodule TableTest do
     %Options{file: "file name"}
   end
 
-  defp lines_to_blocks(lines, options) do
-    {blks, _links, opts} = Parser.parse_lines(lines, options)
-    {blks, opts}
-  end
 end
 
 # SPDX-License-Identifier: Apache-2.0

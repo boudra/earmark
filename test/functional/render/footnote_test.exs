@@ -1,11 +1,9 @@
 defmodule FootnoteTest do
-  use ExUnit.Case
+  use Support.ParserTestCase
 
-  alias Earmark.Block
-  alias Earmark.Context
   alias Earmark.Inline
-  alias Earmark.Line
-  alias Earmark.Parser
+  alias Earmark.Context
+
 
   def test_footnotes do
     [ {"fn-a", %Block.FnDef{id: "fn-a", number: 1}} ]
@@ -72,9 +70,11 @@ defmodule FootnoteTest do
              "    * List Item 2"
              ]
 
-    {result, _, _} = Parser.parse(lines)
+    result = parse_markdown(lines)
     expected = [%Block.Para{lnb: 1, attrs: nil, lines: ["This is a footnote[^fn-1]"]},
+		%Block.Blank{lnb: 2},
 		%Block.Para{lnb: 3, attrs: nil, lines: ["[^fn-1]: line 1", "line 2"]},
+		%Block.Blank{lnb: 5},
             	%Block.Code{lnb: 6, attrs: nil, language: nil, lines: ["Para 2 line 1", "Para 2 line 2", "",
 								       "* List Item 1", "  List Item 1 Cont", "* List Item 2"]
 		}]
@@ -141,10 +141,6 @@ defmodule FootnoteTest do
     "file name"
   end
 
-  defp lines_to_blocks(lines, options) do
-    {blks, _links, opts} = Parser.parse_lines(lines, options)
-    {blks, opts}
-  end
 end
 
 # SPDX-License-Identifier: Apache-2.0

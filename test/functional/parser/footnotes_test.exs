@@ -32,11 +32,9 @@ defmodule Functional.Parser.FootnotesTest do
           blocks: [%Earmark.Block.ListItem{attrs: nil, lnb: 1,
             blocks: [%Earmark.Block.Para{attrs: nil, lnb: 1, lines: ["foo[^1]"]}],
             bullet: "2.",
-            bullet_type: ".",
             spaced: false,
             type: :ol}],
         start: ~s{ start="2"},
-            bullet_type: ".",
         type: :ol},
       %Earmark.Block.FnList{attrs: ".footnotes", blocks: [%Earmark.Block.FnDef{attrs: nil, lnb: 3, blocks: [%Earmark.Block.Para{attrs: nil, lnb: 3, lines: ["bar baz"]}], id: "1", number: 1}], lnb: 3}], []}
     end

@@ -33,12 +33,13 @@ defmodule Earmark.Helpers.ListHelpers do
   @doc false
   def tighten_lists(blocks)
   def tighten_lists(blocks) do
-    Enum.map(blocks, &tighten_list/1) |> IO.inspect
+    # IO.inspect blocks
+    Enum.map(blocks, &tighten_list/1)
   end
 
   defp tighten_list(block)
   defp tighten_list(%Block.List{blocks: blocks} = list) do
-    tight = Enum.any?(blocks, &_list_item_tight?(&1.blocks, :init) |> IO.inspect)
+    tight = Enum.any?(blocks, &_list_item_tight?(&1.blocks, :init))
     blocks1 = Enum.map(blocks, &%{&1  | spaced: tight})
     %{list | blocks: tighten_lists(blocks1)}
   end
