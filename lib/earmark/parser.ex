@@ -341,6 +341,9 @@ defmodule Earmark.Parser do
   #######################################################
 
   defp assign_attributes_to_blocks([], result), do: Enum.reverse(result)
+  defp assign_attributes_to_blocks([ %Block.Ial{}=ial, %Block.Blank{} | rest], result) do
+    assign_attributes_to_blocks([ial | rest], result)
+  end
   defp assign_attributes_to_blocks([ %Block.Ial{attrs: attrs}, block | rest], result) do
     assign_attributes_to_blocks(rest, [ %{block | attrs: attrs} | result ])
   end
