@@ -1,4 +1,5 @@
 defmodule Earmark.Parser do
+  alias Dev.Debugging
   alias Earmark.Block
   alias Earmark.Line
   alias Earmark.Options
@@ -61,9 +62,19 @@ defmodule Earmark.Parser do
   end
 
   defp lines_to_blocks(lines, options) do
-    with {blocks, options1} <- lines |> _parse([], options) do
-      { blocks |> assign_attributes_to_blocks([]) |> IO.inspect |> consolidate_list_items([]) |> tighten_lists(), options1 }
-    end
+    {blocks, options1} = lines |> _parse([], options)
+    {blocks |> _blocks_consolidate(), options1}
+  end
+
+  defp _blocks_consolidate(blocks) do
+    # blocks |> assign_attributes_to_blocks([]) |> IO.inspect |> consolidate_list_items([]) |> tighten_lists()
+    blocks
+    |> assign_attributes_to_blocks([])
+    |> Debugging.debug("before consolidate_list_items")
+    |> consolidate_list_items([])
+    |> Debugging.debug("before tighten")
+    |> tighten_lists()
+    |> Debugging.debug("after tighten")
   end
 
 
@@ -168,12 +179,12 @@ defmodule Earmark.Parser do
   # We handle lists in two passes. In the first, we build list items,
   # in the second we combine adjacent items into lists. This is pass one
 
-  defp _parse( [%Line.ListItem{type: type, bullet: bullet, lnb: lnb} | _ ] = lines, result, options) do
+  defp _parse( [%Line.ListItem{type: type, bullet: bullet, bullet_type: bullet_type, lnb: lnb} | _ ] = lines, result, options) do
     {list_lines, rest} = read_list_lines(lines)
 
     {blocks, _, options1} = parse(list_lines, %{options | line: lnb}, true)
 
-    _parse([%Line.Blank{lnb: 0} | rest], [ %Block.ListItem{type: type, blocks: blocks, bullet: bullet, lnb: lnb} | result ], options1)
+    _parse([%Line.Blank{lnb: 0} | rest], [ %Block.ListItem{type: type, blocks: blocks, bullet: bullet, bullet_type: bullet_type, lnb: lnb} | result ], options1)
   end
 
   #################
@@ -357,6 +368,7 @@ defmodule Earmark.Parser do
 
   end
 
+
   ##################################################
   # Consolidate one or more list items into a list #
   ##################################################
@@ -366,41 +378,52 @@ defmodule Earmark.Parser do
   end
   # We have a list, and the next element is an item of the same type
   defp consolidate_list_items(
-    [list = %Block.List{bullet_type: type, blocks: items},
-     item = %Block.ListItem{bullet_type: type} | rest], result)
+    [list = %Block.List{bullet_type: bullet_type, blocks: items},
+     item = %Block.ListItem{bullet_type: bullet_type} | rest], result)
   do
     start = extract_start(item)
     items = [ item | items ]   # original list is reversed
-    consolidate_list_items([ %{ list | blocks: items, start: start } | rest ], result)
+    list1 = %{ list | blocks: items, start: start }
+    # IO.puts "added"
+    # IO.inspect list1
+    consolidate_list_items([ list1 | rest ], result)
   end
   defp consolidate_list_items(
-    [list = %Block.List{type: type, blocks: items}, %Block.Blank{} | rest], result)
+    [list = %Block.List{}, %Block.Blank{} | rest], result)
   do
+    # IO.puts "ignore blank"
+    # IO.inspect list
+    # IO.puts "_____________________"
+    # IO.inspect rest
     consolidate_list_items([list|rest], result)
   end
-
   # We have an item, but no open list
-  defp consolidate_list_items([ item = %Block.ListItem{bullet_type: type} | rest], result) do
+  defp consolidate_list_items([ item = %Block.ListItem{bullet: bullet, bullet_type: bullet_type, type: type} | rest], result) do
     start = extract_start(item)
-    consolidate_list_items([ %Block.List{ bullet_type: type, blocks: [ item ], start: start} | rest ], result)
+    list = %Block.List{ bullet: bullet, bullet_type: bullet_type, blocks: [ item ], start: start, type: type}
+    # IO.puts "created"
+    # IO.inspect list
+    consolidate_list_items([ list | rest ], result)
   end
   # Nothing to see here, move on
   defp consolidate_list_items([ head | rest ], result) do
     consolidate_list_items(rest, [ head | result ])
   end
 
-  defp compute_list_spacing( list = %Block.List{blocks: items} ) do
-    with spaced = any_spaced_items?(items),
-         unified_items = Enum.map(items, &(%{&1 | spaced: spaced}))
-    do
-      %{list | blocks: unified_items}
-    end
-  end
-  defp compute_list_spacing( anything_else ), do: anything_else # nop
 
-  defp any_spaced_items?([]), do: false
-  defp any_spaced_items?([%{spaced: true}|_]), do: true
-  defp any_spaced_items?([_|tail]), do: any_spaced_items?(tail)
+  # DEAD?
+  # defp compute_list_spacing( list = %Block.List{blocks: items} ) do
+  #   with spaced = any_spaced_items?(items),
+  #        unified_items = Enum.map(items, &(%{&1 | spaced: spaced}))
+  #   do
+  #     %{list | blocks: unified_items}
+  #   end
+  # end
+  # defp compute_list_spacing( anything_else ), do: anything_else # nop
+
+  # defp any_spaced_items?([]), do: false
+  # defp any_spaced_items?([%{spaced: true}|_]), do: true
+  # defp any_spaced_items?([_|tail]), do: any_spaced_items?(tail)
 
 
   ##################################################
@@ -558,13 +581,15 @@ defmodule Earmark.Parser do
   # end
 
   defp extract_start(%{bullet: "1."}), do: ""
+  defp extract_start(%{bullet: "1)"}), do: ""
   defp extract_start(%{bullet: bullet}) do
-    case Regex.run(~r{^(\d+)\.}, bullet) do
+    case Regex.run(~r{^(\d+)[.)]}, bullet) do
       nil -> ""
       [_, start] -> ~s{ start="#{start}"}
     end
   end
 
+  # TODO: Get rid of this one
   defp remove_trailing_blank_lines(lines) do
     lines
     |> Enum.reverse

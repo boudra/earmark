@@ -1,5 +1,6 @@
 defmodule Dev.Debugging do
 
+
   def line(line, options \\ []) do
     Earmark.Line.type_of({line, 0}, struct(Earmark.Options, options), false)
   end
@@ -22,13 +23,27 @@ defmodule Dev.Debugging do
     {something, _nth(something, n)}
   end
 
-  def inspect(pair, title \\ nil)
-  def inspect({original, part}, title) do
-    if title do
-      IO.puts title
+  def debug(object, title \\ nil) do
+    if System.get_env("DEBUG") do
+      _debug(object, title)
+    else
+      object
     end
-    Kernel.inspect(part)
+  end
+
+  defp _debug({:__debug__, original, part}=object, title) do
+    if title do
+      IO.puts :stderr, ">>> #{title}"
+    end
+    IO.puts(:stderr, 
+      inspect(part, pretty: true))
+    if title do
+      IO.puts :stderr, "<<< #{title}"
+    end
     original
+  end
+  defp _debug(other, title) do
+    _debug({:__debug__, other, other}, title)
   end
 
   def inspect_only({original, collection}, elements) do

@@ -2,6 +2,9 @@ defmodule Acceptance.Lists.GfmSpecTest do
   use Support.AcceptanceTestCase
 
   describe "gfm lists: https://github.github.com/gfm/#lists" do
+    test "debug" do
+      html!("- a\n- b")
+    end
     test "# 281" do
       markdown = """
       - foo

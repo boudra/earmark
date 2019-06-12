@@ -1,17 +1,19 @@
 defmodule EarmarkHelpersTests.ListHelpers.SpaceListsTest do
   use ExUnit.Case
-  import Earmark.Helpers.ListHelpers, only: [space_lists: 1]
+
+  alias Earmark.Block
+  import Earmark.Helpers.ListHelpers, only: [tighten_lists: 1]
 
   @one_input [
-  :blank,
-  %Earmark.Block.List{
+  %Block.Blank{},
+  %Block.List{
     attrs: nil,
     blocks: [
-      %Earmark.Block.ListItem{
+      %Block.ListItem{
         attrs: nil,
         blocks: [
           :blank,
-          %Earmark.Block.Para{attrs: nil, lines: ["one"], lnb: 1}
+          %Block.Para{attrs: nil, lines: ["one"], lnb: 1}
         ],
         bullet: "-",
         bullet_type: "-",
@@ -30,15 +32,15 @@ defmodule EarmarkHelpersTests.ListHelpers.SpaceListsTest do
 ] 
 
   @one_output [
-  :blank,
-  %Earmark.Block.List{
+  %Block.Blank{},
+  %Block.List{
     attrs: nil,
     blocks: [
-      %Earmark.Block.ListItem{
+      %Block.ListItem{
         attrs: nil,
         blocks: [
           :blank,
-          %Earmark.Block.Para{attrs: nil, lines: ["one"], lnb: 1}
+          %Block.Para{attrs: nil, lines: ["one"], lnb: 1}
         ],
         bullet: "-",
         bullet_type: "-",
@@ -56,6 +58,6 @@ defmodule EarmarkHelpersTests.ListHelpers.SpaceListsTest do
   :blank
 ]
   test "one" do
-    assert space_lists(@one_input) == @one_output
+    assert tighten_lists(@one_input) == @one_output
   end
 end
