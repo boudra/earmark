@@ -1,8 +1,5 @@
 defmodule Functional.Parser.FootnotesTest do
-  use ExUnit.Case
-
-  alias Earmark.Block
-  alias Earmark.Options
+  use Support.ParserTestCase
 
 
   describe "Defined" do
@@ -12,11 +9,12 @@ defmodule Functional.Parser.FootnotesTest do
     [^1]: bar baz
     """
     test "Vanilla Footnote" do
-      assert parse(@vanilla) == {[%Block.Para{attrs: nil, lnb: 1, lines: ["foo[^1]"]},
+      assert parse_markdown(@vanilla, footnotes: true) == [%Block.Para{attrs: nil, lnb: 1, lines: ["foo[^1]"]},
+        %Block.Blank{lnb: 2},
         %Block.FnList{attrs: ".footnotes", lnb: 3,
          blocks: [%Block.FnDef{attrs: nil, lnb: 3,
            blocks: [%Block.Para{attrs: nil, lnb: 3, lines: ["bar baz"]}],
-           id: "1", number: 1}]}], []}
+           id: "1", number: 1}]}]
     end
 
     @li_fn """
@@ -25,18 +23,26 @@ defmodule Functional.Parser.FootnotesTest do
     [^1]: bar baz
     """
     test "List Item Footnote" do
-      assert parse(@li_fn) == {[
-        %Earmark.Block.List{
+      assert parse_markdown(@li_fn, footnotes: true) == [
+        %Block.List{
           lnb: 1,
           attrs: nil,
-          blocks: [%Earmark.Block.ListItem{attrs: nil, lnb: 1,
-            blocks: [%Earmark.Block.Para{attrs: nil, lnb: 1, lines: ["foo[^1]"]}],
+          blocks: [%Block.ListItem{attrs: nil, lnb: 1,
+            blocks: [
+              %Block.Blank{lnb: 0},
+              %Block.Para{attrs: nil, lnb: 1, lines: ["foo[^1]"]},
+            ],
             bullet: "2.",
+            bullet_type: ".",
             spaced: false,
-            type: :ol}],
+            type: :ol},
+          ],
         start: ~s{ start="2"},
+        bullet: "2.",
+        bullet_type: ".",
         type: :ol},
-      %Earmark.Block.FnList{attrs: ".footnotes", blocks: [%Earmark.Block.FnDef{attrs: nil, lnb: 3, blocks: [%Earmark.Block.Para{attrs: nil, lnb: 3, lines: ["bar baz"]}], id: "1", number: 1}], lnb: 3}], []}
+        %Block.Blank{},
+      %Block.FnList{attrs: ".footnotes", blocks: [%Block.FnDef{attrs: nil, lnb: 3, blocks: [%Block.Para{attrs: nil, lnb: 3, lines: ["bar baz"]}], id: "1", number: 1}], lnb: 3}]
     end
 
   end
@@ -49,8 +55,12 @@ defmodule Functional.Parser.FootnotesTest do
     """
     test "Shorter Vanilla is not a Footnote" do
       assert parse(@shorter_vanilla) ==
-      {[%Earmark.Block.Para{attrs: nil, lnb: 1, lines: ["foo[^1]"]},
-        %Earmark.Block.IdDef{attrs: nil, lnb: 3, id: "^1", title: "", url: "bar"}], [{:error, 1, "footnote 1 undefined, reference to it ignored"}]}
+        {[
+          %Block.Blank{},
+          %Block.Para{attrs: nil, lnb: 1, lines: ["foo[^1]"]},
+          %Block.Blank{lnb: 2},
+          %Block.IdDef{attrs: nil, lnb: 3, id: "^1", title: "", url: "bar"}],
+          [{:error, 1, "footnote 1 undefined, reference to it ignored"}]}
 
     end
 
@@ -60,13 +70,17 @@ defmodule Functional.Parser.FootnotesTest do
     [^2]: bar baz
     """
     test "Footnote" do
-      assert parse(@undefined_fn) == {[%Earmark.Block.Para{attrs: nil, lines: ["foo[^1]"], lnb: 1}], [{:error, 1, "footnote 1 undefined, reference to it ignored"}]}
+      assert parse(@undefined_fn) ==
+        {[
+          %Block.Blank{},
+          %Block.Para{attrs: nil, lines: ["foo[^1]"], lnb: 1},
+          %Block.Blank{lnb: 2}], [{:error, 1, "footnote 1 undefined, reference to it ignored"}]}
 
     end
   end
 
   defp parse(str) do
-    {blocks, context} = Earmark.Parser.parse_markdown(str, %Options{footnotes: true})
+    {blocks, context} = Parser.parse_markdown(str, %Options{footnotes: true})
     {blocks, context.options.messages}
   end
 end
