@@ -22,7 +22,7 @@ defmodule TableTest do
       alignments: [ :left, :left, :left ],
       header:     nil}
 
-    assert result == {[ expected ], options()}
+    assert result == {[ expected, %Block.Blank{} ], options()}
   end
 
   test "test heading" do
@@ -38,7 +38,7 @@ defmodule TableTest do
       rows:       [ ~w{d e f} ],
       alignments: [ :left, :left, :left ]}
 
-    assert result == {[ expected ], options()}
+    assert result == {[ expected, %Block.Blank{} ], options()}
   end
 
   test "test alignment" do
@@ -54,7 +54,7 @@ defmodule TableTest do
       rows:       [ ~w{d e f} ],
       alignments: [ :right, :center, :left ]}
 
-    assert result == {[ expected ], options()}
+    assert result == {[ expected, %Block.Blank{} ], options()}
   end
 
 

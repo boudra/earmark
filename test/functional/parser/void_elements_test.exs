@@ -1,8 +1,5 @@
 defmodule Parser.VoidElementTest do
-  use ExUnit.Case
-
-  alias Earmark.Parser
-  alias Earmark.Block
+  use Support.ParserTestCase
 
   [
     {"area as void element", [~s{<area shape="rect" coords="there">}], [
@@ -34,7 +31,7 @@ defmodule Parser.VoidElementTest do
     ]},
     ] |> Enum.each( fn {description, input, expect} ->
       test( description ) do
-        {result, _, _} = Parser.parse(unquote(input))
+        result = parse_markdown(unquote(input))
         assert result == unquote(Macro.escape expect)
       end
     end)

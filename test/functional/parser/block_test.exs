@@ -1,8 +1,5 @@
 defmodule BlockTest do
-  use ExUnit.Case
-
-  alias Earmark.Line
-  alias Earmark.Block
+  use Support.ParserTestCase
 
   ############
   # Headings #
