@@ -6,7 +6,7 @@ defmodule BlockTest do
   ############
 
   test "Setext Heading" do
-    result = Block.lines_to_blocks([
+    result = lines_to_blocks([
                 %Line.Blank{},
                 %Line.Text{content: "Heading"},
                 %Line.SetextUnderlineHeading{level: 1}
@@ -17,7 +17,7 @@ defmodule BlockTest do
   end
 
   test "Regular heading" do
-    result = Block.lines_to_blocks([ %Line.Heading{content: "Heading", level: 2} ], options())
+    result = lines_to_blocks([ %Line.Heading{content: "Heading", level: 2} ], options())
     assert result == {[ %Block.Heading{content: "Heading", level: 2} ], options()}
   end
 
@@ -26,7 +26,7 @@ defmodule BlockTest do
   ##########
 
   test "Ruler" do
-    result = Block.lines_to_blocks([ %Line.Ruler{type: "-"} ], options())
+    result = lines_to_blocks([ %Line.Ruler{type: "-"} ], options())
     assert result == {[ %Block.Ruler{type: "-"} ], options()}
   end
 
@@ -35,22 +35,22 @@ defmodule BlockTest do
   ###############
 
   test "Basic block quote" do
-    result = Block.lines_to_blocks([
+    result = lines_to_blocks([
                %Line.BlockQuote{content: "line 1", lnb: 1},
                %Line.BlockQuote{content: "line 2", lnb: 2}
              ], options())
 
-    expected = {[%Block.BlockQuote{lnb: 1, blocks: [%Block.Para{lines: ["line 1", "line 2"], lnb: 1}]}], options()}
+    expected = {[%Block.BlockQuote{lnb: 1, blocks: [%Block.Blank{},%Block.Para{lines: ["line 1", "line 2"], lnb: 1}]}], options()}
     assert result == expected
   end
 
   test "Block quote where continuation lines don't start >" do
-    result = Block.lines_to_blocks([
+    result = lines_to_blocks([
                %Line.BlockQuote{content: "line 1", lnb: 1},
                %Line.Text{content: "line 2", lnb: 2}
              ], options())
 
-    expected = {[%Block.BlockQuote{lnb: 1, blocks: [%Block.Para{lines: ["line 1", "line 2"], lnb: 1}]}], options()}
+    expected = {[%Block.BlockQuote{lnb: 1, blocks: [%Block.Blank{},%Block.Para{lines: ["line 1", "line 2"], lnb: 1}]}], options()}
     assert result == expected
   end
 
@@ -60,7 +60,7 @@ defmodule BlockTest do
   ########
 
   test "simple indented code" do
-    result = Block.lines_to_blocks([
+    result = lines_to_blocks([
                   %Line.Indent{level: 1, content: "line 1"},
                   %Line.Indent{level: 1, content: " line 2"},
                   %Line.Blank{},
@@ -74,7 +74,7 @@ defmodule BlockTest do
   end
 
   test "indented code at multiple levels" do
-    result = Block.lines_to_blocks([
+    result = lines_to_blocks([
                   %Line.Indent{level: 1, content: "line 1"},
                   %Line.Indent{level: 1, content: "  line 2"},
                   %Line.Indent{level: 2, content: "line 3"},
@@ -87,7 +87,7 @@ defmodule BlockTest do
   end
 
   test "fenced code with ~~~" do
-    result = Block.lines_to_blocks([
+    result = lines_to_blocks([
                   %Line.Fence{delimiter: "~~~", language: "elixir"},
                   %Line.Text{content: "line 1", line: "line 1"},
                   %Line.Blank{line: ""},
@@ -99,7 +99,7 @@ defmodule BlockTest do
   end
 
   test "fenced code ignores opposite fence" do
-    result = Block.lines_to_blocks([
+    result = lines_to_blocks([
                   %Line.Fence{delimiter: "~~~", language: "elixir"},
                   %Line.Fence{delimiter: "```", language: "elixir", line: "``` elixir"},
                   %Line.Text{content: "line 1", line: "line 1"},
@@ -114,7 +114,7 @@ defmodule BlockTest do
   ##############
 
   test "HTML Block" do
-    result = Block.lines_to_blocks([
+    result = lines_to_blocks([
                   %Line.HtmlOpenTag{tag: "table", line: "<table class='c'>"},
                   %Line.Text{line: "line 1"},
                   %Line.HtmlOpenTag{tag: "pre", line: "<pre>"},
@@ -137,7 +137,7 @@ defmodule BlockTest do
   end
 
   test "Nested HTML Block" do
-    result = Block.lines_to_blocks([
+    result = lines_to_blocks([
                   %Line.HtmlOpenTag{tag: "table", line: "<table class='c'>"},
                   %Line.Text{line: "line 1"},
                   %Line.HtmlOpenTag{tag: "table", line: "<table>"},
@@ -161,7 +161,7 @@ defmodule BlockTest do
 
 
   test "HTML comment on one line" do
-    result = Block.lines_to_blocks([
+    result = lines_to_blocks([
                   %Line.HtmlComment{line: "<!-- xx -->", complete: true}
              ], options())
     expected = {[ %Block.HtmlOther{html: [ "<!-- xx -->" ]}], options()}
@@ -170,7 +170,7 @@ defmodule BlockTest do
   end
 
   test "HTML comment on multiple lines" do
-    result = Block.lines_to_blocks([
+    result = lines_to_blocks([
                   %Line.HtmlComment{line: "<!-- ", complete: false},
                   %Line.Indent{level: 2, line: "xxx"},
                   %Line.Text{line: "-->"}
@@ -185,7 +185,7 @@ defmodule BlockTest do
   ##################
 
   test "Basic ID definition" do
-    result = Block.lines_to_blocks([
+    result = lines_to_blocks([
                   %Line.IdDef{id: "id1", url: "url1", title: "title1"}
              ], options())
 
@@ -193,7 +193,7 @@ defmodule BlockTest do
   end
 
   test "ID definition with title on next line" do
-    result = Block.lines_to_blocks([
+    result = lines_to_blocks([
                   %Line.IdDef{id: "id1", url: "url1"},
                   %Line.Text{content: "  (title1)"}
              ], options())
@@ -202,7 +202,7 @@ defmodule BlockTest do
   end
 
   test "ID definition with no title and no title on next line" do
-    result = Block.lines_to_blocks([
+    result = lines_to_blocks([
                   %Line.IdDef{id: "id1", url: "url1"},
                   %Line.Text{content: "  not title1", line: "  not title1"}
              ], options())
@@ -218,7 +218,7 @@ defmodule BlockTest do
   ################################################
 
   test "IAL gets associated with previous block" do
-    result = Block.lines_to_blocks([
+    result = lines_to_blocks([
                   %Line.Text{line: "line", content: "line"},
                   %Line.Ial{attrs: ".a1 .a2"},
                   %Line.Text{content: "another", line: "another"}
@@ -235,7 +235,7 @@ defmodule BlockTest do
   ######################################################
 
   test "Accumulate basic ID definition" do
-    {blocks, refs, _ } = Block.parse([
+    {blocks, refs, _ } = Parser.parse_lines([
                   %Line.IdDef{id: "id1", url: "url1", title: "title1"}
              ], options())
 
