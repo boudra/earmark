@@ -1,8 +1,5 @@
 defmodule Parser.WhitespaceTest do
-  use ExUnit.Case
-
-  alias Earmark.Parser
-  alias Earmark.Block
+  use Support.ParserTestCase
 
   test "Whitespace before and after code is ignored" do
     {result, _, _} = Parser.parse(["",
@@ -13,6 +10,8 @@ defmodule Parser.WhitespaceTest do
       "para"])
 
     expected = [
+      %Block.Blank{},
+      %Block.Blank{lnb: 1},
       %Block.Code{lnb: 2, attrs: nil,
         language: nil,
         lines: ["line 1", "line 2"]},

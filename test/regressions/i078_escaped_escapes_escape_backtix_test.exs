@@ -36,6 +36,7 @@ defmodule Regressions.I078EscapedEscapesEscapeBacktixTest do
   test "Issue https://github.com/pragdave/earmark/issues/78 correct blocks" do
     assert blox_from_file("test/fixtures/i078_short.md") ==
              {[
+                %Earmark.Block.Blank{},
                 %Earmark.Block.Para{lnb: 1, attrs: nil, lines: ["Hello `\\\\` \\\\"]},
                 %Earmark.Block.Code{lnb: 2, attrs: nil, language: nil, lines: ["World"]}
               ], %{}, %Earmark.Options{}}
