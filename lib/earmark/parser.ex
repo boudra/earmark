@@ -184,11 +184,12 @@ defmodule Earmark.Parser do
   # in the second we combine adjacent items into lists. This is pass one
 
   defp _parse( [%Line.ListItem{type: type, bullet: bullet, bullet_type: bullet_type, lnb: lnb} | _ ] = lines, result, options) do
-    {list_lines, rest} = read_list_lines(lines)
+    {tight, spaced, list_lines, rest} = read_list_lines(lines)
+    |> IO.inspect
 
     {blocks, _, options1} = parse(list_lines, %{options | line: lnb}, true)
 
-    _parse([%Line.Blank{lnb: 0} | rest], [ %Block.ListItem{type: type, blocks: blocks, bullet: bullet, bullet_type: bullet_type, lnb: lnb} | result ], options1)
+    _parse([%Line.Blank{lnb: 0} | rest], [ %Block.ListItem{type: type, blocks: blocks, bullet: bullet, bullet_type: bullet_type, lnb: lnb, tight: tight, spaced: spaced} | result ], options1)
   end
 
   #################

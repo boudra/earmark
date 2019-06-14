@@ -21,7 +21,7 @@ defmodule Earmark.Block do
   defmodule Ial,         do: defstruct lnb: 0, attrs: nil, content: nil, verbatim: ""
   # List does not need line number
   defmodule List,        do: defstruct lnb: 1, attrs: nil, type: :ul, blocks:  [], start: "", bullet: "-, +, *, 1) or 2.", bullet_type: "-, +, *, . or )"
-  defmodule ListItem,    do: defstruct lnb: 0, attrs: nil, type: :ul, spaced: true, blocks: [], bullet: "-, +, *, 1) or 2.", bullet_type: "-, +, *, . or )" 
+  defmodule ListItem,    do: defstruct lnb: 0, attrs: nil, type: :ul, spaced: false, tight: false, blocks: [], bullet: "-, +, *, 1) or 2.", bullet_type: "-, +, *, . or )" 
 
   defmodule Plugin,      do: defstruct lnb: 0, attrs: nil, lines: [], handler: nil, prefix: "" # prefix is appended to $$
 

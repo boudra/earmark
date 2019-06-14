@@ -33,7 +33,6 @@ defmodule Earmark.Helpers.ListHelpers do
   @doc false
   def tighten_lists(blocks)
   def tighten_lists(blocks) do
-    # IO.inspect blocks
     Enum.map(blocks, &tighten_list/1)
   end
 
