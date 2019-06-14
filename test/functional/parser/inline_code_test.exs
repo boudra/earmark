@@ -97,8 +97,7 @@ defmodule Parser.InlineCodeTest do
                blocks: [
                  %Block.ListItem{
                    attrs: nil,
-                   blocks: [%Block.Blank{},
-                     %Block.Para{attrs: nil, lines: text_lines, lnb: 1}],
+                   blocks: [%Block.Para{attrs: nil, lines: text_lines, lnb: 1}],
 
                    spaced: false,
                    bullet: bullet,

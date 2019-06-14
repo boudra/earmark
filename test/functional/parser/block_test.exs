@@ -40,7 +40,7 @@ defmodule BlockTest do
                %Line.BlockQuote{content: "line 2", lnb: 2}
              ], options())
 
-    expected = {[%Block.BlockQuote{lnb: 1, blocks: [%Block.Blank{},%Block.Para{lines: ["line 1", "line 2"], lnb: 1}]}], options()}
+    expected = {[%Block.BlockQuote{lnb: 1, blocks: [%Block.Para{lines: ["line 1", "line 2"], lnb: 1}]}], options()}
     assert result == expected
   end
 
@@ -50,7 +50,7 @@ defmodule BlockTest do
                %Line.Text{content: "line 2", lnb: 2}
              ], options())
 
-    expected = {[%Block.BlockQuote{lnb: 1, blocks: [%Block.Blank{},%Block.Para{lines: ["line 1", "line 2"], lnb: 1}]}], options()}
+    expected = {[%Block.BlockQuote{lnb: 1, blocks: [%Block.Para{lines: ["line 1", "line 2"], lnb: 1}]}], options()}
     assert result == expected
   end
 

@@ -29,7 +29,6 @@ defmodule Functional.Parser.FootnotesTest do
           attrs: nil,
           blocks: [%Block.ListItem{attrs: nil, lnb: 1,
             blocks: [
-              %Block.Blank{lnb: 0},
               %Block.Para{attrs: nil, lnb: 1, lines: ["foo[^1]"]},
             ],
             bullet: "2.",

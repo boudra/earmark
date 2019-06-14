@@ -126,7 +126,9 @@ defmodule Earmark.Line do
   def scan_lines(lines, options \\ %Options{}, recursive \\ false)
 
   def scan_lines(lines, options, recursive) do
-    lines_with_count(lines, options.line - 1)
+    starting_line = options.line -
+      if recursive, do: 0, else: 1
+    lines_with_count(lines, starting_line)
     |> get_mapper(options).(fn line -> type_of(line, options, recursive) end)
   end
 
