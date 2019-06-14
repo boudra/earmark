@@ -45,9 +45,13 @@ defmodule Earmark.Parser do
 
   def parse(text_lines), do: parse(text_lines, %Options{}, false)
   def parse(text_lines, options = %Options{}, recursive) do
-    ["" | text_lines ++ [""]]
-    |> Line.scan_lines(options, recursive)
-    |> parse_lines(options)
+    if recursive do
+      text_lines
+    else
+      ["" | text_lines ++ [""]]
+    end
+      |> Line.scan_lines(options, recursive)
+      |> parse_lines(options)
   end
 
   @doc false

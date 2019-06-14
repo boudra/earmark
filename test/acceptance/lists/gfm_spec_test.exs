@@ -3,7 +3,7 @@ defmodule Acceptance.Lists.GfmSpecTest do
 
   describe "gfm lists: https://github.github.com/gfm/#lists" do
     test "debug" do
-      html!("- a\n- b")
+      html!("- a\n\n- b")
     end
     test "# 281" do
       markdown = """
