@@ -3,7 +3,7 @@ defmodule Earmark.Line do
   alias Earmark.Options
 
   import Options, only: [get_mapper: 1]
-  import Earmark.Helpers.ListHelpers, only: [calculate_list_indent: 1]
+  import Earmark.Contexts.ListContext.ListHelpers, only: [calculate_list_indent: 1]
 
   @moduledoc """
   Give a line of text, return its context-free type. Not for external consumption
@@ -22,7 +22,7 @@ defmodule Earmark.Line do
   @id_title_part_re ~r[^\s*#{@id_title_part}\s*$]x
 
   @id_re ~r'''
-     ^\s{0,3}             # leading spaces
+     ^(\s{0,3})             # leading spaces
      \[([^\]]*)\]:        # [someid]:
      \s+
      (?|
@@ -165,20 +165,20 @@ defmodule Earmark.Line do
       line =~ ~r/^\s*$/ ->
         %Blank{}
 
-      line =~ ~r/^ \s{0,3} ( <! (?: -- .*? -- \s* )+ > ) $/x && !recursive ->
-        %HtmlComment{complete: true}
+      match = !recursive && Regex.run(~r/^ (\s{0,3}) ( <! (?: -- .*? -- \s* )+ > ) $/x, line) ->
+        %HtmlComment{complete: true, initial_indent: match |> Enum.at(1) |> String.length}
 
-      line =~ ~r/^ \s{0,3} ( <!-- .*? ) $/x && !recursive ->
-        %HtmlComment{complete: false}
+      match = !recursive && Regex.run(~r/^ \s{0,3} ( <!-- .*? ) $/x, line) ->
+        %HtmlComment{complete: false, initial_indent: match |> Enum.at(1) |> String.length}
 
-      line =~ ~r/^ \s{0,3} (?:-\s?){3,} $/x ->
-        %Ruler{type: "-"}
+      match = Regex.run(~r/^ \s{0,3} (?:-\s?){3,} $/x, line) ->
+        %Ruler{type: "-", initial_indent: match |> Enum.at(1) |> String.length}
 
-      line =~ ~r/^ \s{0,3} (?:\*\s?){3,} $/x ->
-        %Ruler{type: "*"}
+      match = Regex.run(~r/^ \s{0,3} (?:\*\s?){3,} $/x, line) ->
+        %Ruler{type: "*", initial_indent: match |> Enum.at(1) |> String.length}
 
-      line =~ ~r/^ \s{0,3} (?:_\s?){3,} $/x ->
-        %Ruler{type: "_"}
+      match = Regex.run(~r/^ \s{0,3} (?:_\s?){3,} $/x, line) ->
+        %Ruler{type: "_", initial_indent: match |> Enum.at(1) |> String.length}
 
       match = Regex.run(~R/^(#{1,6})\s+(?|([^#]+)#*$|(.*))/u, line) ->
         [_, level, heading] = match
@@ -188,86 +188,93 @@ defmodule Earmark.Line do
         [_, quote] = match
         %BlockQuote{content: quote}
 
-      match = Regex.run(~r/^((?:\s\s\s\s)+)(.*)/, line) ->
+      match = Regex.run(~r/^((?:\s\s\s\s)+\s{0,3})(.*)/, line) ->
         [_, spaces, code] = match
-        %Indent{level: div(String.length(spaces), 4), content: code}
+        length = String.length(spaces)
+        %Indent{level: div(length, 4), content: code, initial_indent: length}
 
-      match = Regex.run(~r/^\s*(```|~~~)\s*([\w\-]*)\s*$/u, line) ->
-        [_, fence, language] = match
-        %Fence{delimiter: fence, language: language}
+      match = Regex.run(~r/^(\s{0,3})(```|~~~)\s*([\w\-]*)\s*$/u, line) ->
+        [_, spaces, fence, language] = match
+        %Fence{delimiter: fence, language: language, initial_indent: String.length(spaces)}
 
       #   Although no block tags I still think they should close a preceding para as do many other
       #   implementations.
-      (match = Regex.run(@void_tag_rgx, line)) && !recursive ->
+      match = !recursive && Regex.run(@void_tag_rgx, line) ->
         [_, tag] = match
 
         %HtmlOneLine{tag: tag, content: line}
 
-      (match = Regex.run(~r{^<([-\w]+?)(?:\s.*)?>.*</\1>}, line)) && !recursive ->
+      match = !recursive &&  Regex.run(~r{^<([-\w]+?)(?:\s.*)?>.*</\1>}, line) ->
         [_, tag] = match
 
         if block_tag?(tag),
           do: %HtmlOneLine{tag: tag, content: line},
           else: %Text{content: line}
 
-      (match = Regex.run(~r{^<([-\w]+?)(?:\s.*)?/>.*}, line)) && !recursive ->
+      match = !recursive &&  Regex.run(~r{^<([-\w]+?)(?:\s.*)?/>.*}, line) ->
         [_, tag] = match
 
         if block_tag?(tag),
           do: %HtmlOneLine{tag: tag, content: line},
           else: %Text{content: line}
 
-      (match = Regex.run(~r/^<([-\w]+?)(?:\s.*)?>/, line)) && !recursive ->
+      match = !recursive &&  Regex.run(~r/^<([-\w]+?)(?:\s.*)?>/, line) ->
         [_, tag] = match
         %HtmlOpenTag{tag: tag, content: line}
 
-      (match = Regex.run(~r/^<\/([-\w]+?)>/, line)) && !recursive ->
+      match = !recursive &&  Regex.run(~r/^<\/([-\w]+?)>/, line) ->
         [_, tag] = match
         %HtmlCloseTag{tag: tag}
 
       match = Regex.run(@id_re, line) ->
-        [_, id, url | title] = match
+        [_, spaces, id, url | title] = match
         title = if(length(title) == 0, do: "", else: hd(title))
-        %IdDef{id: id, url: url, title: title}
+        %IdDef{id: id, initial_indent: spaces |> String.length, url: url, title: title}
 
       match = options.footnotes && Regex.run(~r/^\[\^([^\s\]]+)\]:\s+(.*)/, line) ->
         [_, id, first_line] = match
         %FnDef{id: id, content: first_line}
 
       match = Regex.run(~r/^(\s{0,3})([-*+])\s+(.*)/, line) ->
-        [_, _, bullet, text] = match
+        [_, indent_str, bullet, text] = match
 
         %ListItem{
-          type: :ul,
           bullet: bullet,
           bullet_type: String.slice(bullet, -1..-1),
           content: text,
+          initial_indent: String.length(indent_str),
           list_indent: calculate_list_indent(line),
+          type: :ul
         }
 
       match = Regex.run(~r/^(\s{0,3})(\d+[.)])\s+(.*)/, line) ->
-        [_, _, bullet, text] = match
+        [_, indent_str, bullet, text] = match
 
         %ListItem{
-          type: :ol,
           bullet: bullet,
           bullet_type: String.slice(bullet, -1..-1),
           content: text,
+          initial_indent: String.length(indent_str),
           list_indent: calculate_list_indent(line),
+          type: :ol
         }
 
-      match = Regex.run(~r/^ \s{0,3} \| (?: [^|]+ \|)+ \s* $ /x, line) ->
-        [body] = match
+      match = Regex.run(~r/^ (\s{0,3}) \| ( [^|]+ \|)+ \s* $ /x, line) ->
+        [_, spaces, body] = match
 
-        body =
+        body1 =
           body
-          |> String.trim()
           |> String.trim("|")
 
-        columns = split_table_columns(body)
-        %TableLine{content: line, columns: columns}
+        columns = split_table_columns(body1)
+        %TableLine{content: line, columns: columns, initial_indent: spaces |> String.length}
 
-      line =~ ~r/ \s \| \s /x ->
+      match = Regex.run( ~r/^(\s{0,3}) \s \| \s /x, line) ->
+        [_, spaces] = match
+        columns = split_table_columns(line)
+        %TableLine{content: line, columns: columns, initial_indent: String.length(spaces)}
+
+      match = Regex.run( ~r/ \s \| \s /x, line) ->
         columns = split_table_columns(line)
         %TableLine{content: line, columns: columns}
 
@@ -276,14 +283,14 @@ defmodule Earmark.Line do
         level = if(String.starts_with?(type, "="), do: 1, else: 2)
         %SetextUnderlineHeading{level: level}
 
-      match = Regex.run(~r<^\s{0,3}{:(\s*[^}]+)}\s*$>, line) ->
-        [_, ial] = match
-        %Ial{attrs: String.trim(ial), verbatim: ial}
+      match = Regex.run(~r<^(\s{0,3}){:(\s*[^}]+)}\s*$>, line) ->
+        [_, spaces, ial] = match
+        %Ial{attrs: String.trim(ial), initial_indent: String.length(spaces), verbatim: ial}
 
+      # Will be deprecated do not use in lists
       match = Regex.run(~r<^\$\$(\w*)$>, line) ->
         [_, prefix] = match
         %Plugin{content: "", prefix: prefix}
-
       match = Regex.run(~r<^\$\$(\w*)\s(.*)$>, line) ->
         [_, prefix, content] = match
         %Plugin{content: content, prefix: prefix}
@@ -302,8 +309,9 @@ defmodule Earmark.Line do
       #       true -> %Text
       #
       #
-      true ->
-        %Text{content: line}
+      # Always true
+      match = Regex.run(~r<\A\s{0,3}>, line) ->
+        %Text{content: line, initial_indent: match |> hd() |> String.length}
     end
   end
 

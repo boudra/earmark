@@ -5,9 +5,9 @@ defmodule Earmark.Parser do
   alias Earmark.Options
 
   import Earmark.Helpers.InlineCodeHelpers, only: [opens_inline_code: 1, still_inline_code: 2]
-  import Earmark.Helpers.LookaheadHelpers, only: [read_list_lines: 1]
+  import Earmark.Contexts.ListContext.ListLookahead, only: [read_list_lines: 1]
   import Earmark.Helpers.LineHelpers
-  import Earmark.Helpers.ListHelpers, only: [tighten_lists: 1]
+  import Earmark.Contexts.ListContext.ListHelpers, only: [tighten_lists: 1]
   import Earmark.Helpers.AttrParser
   import Earmark.Helpers.ReparseHelpers
   import Earmark.Message, only: [add_message: 2, add_messages: 2]
@@ -185,7 +185,7 @@ defmodule Earmark.Parser do
 
   defp _parse( [%Line.ListItem{type: type, bullet: bullet, bullet_type: bullet_type, lnb: lnb} | _ ] = lines, result, options) do
     {tight, spaced, list_lines, rest} = read_list_lines(lines)
-    |> IO.inspect
+    # |> IO.inspect
 
     {blocks, _, options1} = parse(list_lines, %{options | line: lnb}, true)
 

@@ -9,7 +9,7 @@ defmodule Earmark.HtmlRenderer do
   import Earmark.Context, only: [append: 2, set_value: 2]
   import Earmark.Options, only: [get_mapper: 1]
 
-  def render(blocks, context, tight \\ false)
+  def render(blocks, context, tight \\ true)
   def render(blocks, context = %Context{options: %Options{}}, tight) do
     messages = get_messages(context)
 
@@ -31,11 +31,11 @@ defmodule Earmark.HtmlRenderer do
   #############
   # Paragraph #
   #############
-  defp render_block(%Block.Para{lnb: lnb, lines: lines, attrs: attrs}, context, false) do
+  defp render_block(%Block.Para{lnb: lnb, lines: lines, attrs: attrs}, context, true) do
     lines = convert(lines, lnb, context)
     add_attrs!(lines, "<p>#{lines.value}</p>\n", attrs, [], lnb)
   end
-  defp render_block(%Block.Para{lnb: lnb, lines: lines, attrs: attrs}, context, true) do
+  defp render_block(%Block.Para{lnb: lnb, lines: lines, attrs: attrs}, context, false) do
     lines = convert(lines, lnb, context)
     add_attrs!(lines, "#{lines.value}\n", attrs, [], lnb)
   end
@@ -131,7 +131,7 @@ defmodule Earmark.HtmlRenderer do
          context = %Context{options: options}, _
        ) do
     class =
-      if language, do: ~s{ class="#{code_classes(language, options.code_class_prefix)}"}, else: ""
+      if String.length(language) > 0, do: ~s{ class="#{code_classes(language, options.code_class_prefix)}"}, else: ""
 
     tag = ~s[<pre><code#{class}>]
     lines = options.render_code.(block)
@@ -153,12 +153,12 @@ defmodule Earmark.HtmlRenderer do
   end
 
   defp render_block(
-         %Block.ListItem{lnb: lnb, blocks: blocks, spaced: spaced, attrs: attrs},
+         %Block.ListItem{lnb: lnb, blocks: blocks, tight: tight, attrs: attrs},
          context, _
        ) do
        # when length(blocks) == 1 do
-    # IO.inspect(["ListItem", spaced: spaced, block: blocks|>hd()])
-    {context1, content} = render(blocks, context, !spaced)
+    # IO.inspect(["ListItem", tight: tight, block: blocks|>hd()])
+    {context1, content} = render(blocks, context, tight)
     html = "<li>#{content}</li>\n"
     add_attrs!(context1, html, attrs, [], lnb)
   end
