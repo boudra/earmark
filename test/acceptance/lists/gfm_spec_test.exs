@@ -397,7 +397,42 @@ defmodule Acceptance.Lists.GfmSpecTest do
       """ |> String.replace(~r{\n}, "")
       assert html!(markdown) == html
     end
+    
+    test "#301" do
+      markdown = """- a
+      """
+      html = """<ul>
+      <li>a</li>
+      </ul>
+      """ |> String.replace(~r{\n}, "")
+      assert html!(markdown) == html
+    end
 
+    
+    test "# 303" do
+      markdown = """- a
+        - b
+      """
+      html = """<ul>
+      <li>a
+      <ul>
+      <li>b</li>
+      </ul>
+      </li>
+      </ul>
+      """ |> String.replace(~r{\n}, "")
+      assert html!(markdown) == html
+
+    end
+    
+    test "# 303" do
+      markdown = """- a
+        - b
+      """
+
+    end
+  
+    
     test "# 304" do
       markdown = """
       1. ```

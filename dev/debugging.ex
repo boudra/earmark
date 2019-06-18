@@ -31,7 +31,7 @@ defmodule Dev.Debugging do
     end
   end
 
-  defp _debug({:__debug__, original, part}=object, title) do
+  defp _debug({:__debug__, original, part}, title) do
     if title do
       IO.puts :stderr, ">>> #{title}"
     end
